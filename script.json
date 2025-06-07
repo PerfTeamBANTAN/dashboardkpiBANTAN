@@ -1,6 +1,5 @@
 function doGet(e) {
   const kategori = (e.parameter.kategori || "").toLowerCase();
-
   let data = [];
 
   if (kategori === 'racing mitra') {
@@ -81,19 +80,48 @@ function doGet(e) {
 
     const finalData = [...body];
     if (rankingRow.length && rankingRow[0].toString().toLowerCase().includes('ranking')) {
-    finalData.push(rankingRow);
+      finalData.push(rankingRow);
+    }
+
+    finalData.unshift(headers);
+    return ContentService
+      .createTextOutput(JSON.stringify(finalData))
+      .setMimeType(ContentService.MimeType.JSON);
+    
+  } else if (kategori === 'service availability') {
+  const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('SERVICE AVAILABILITY');
+  const values = sheet.getDataRange().getValues();
+
+  const headers = values[0];
+  const bulanSekarang = Utilities.formatDate(new Date(), "GMT+7", "MMM ''yy");
+  const indexBulan = headers.indexOf(bulanSekarang);
+  const indexAVG = headers.indexOf("AVG");
+
+  const targetRow = values.find(row => (row[0] || "").toString().trim().toUpperCase() === "TARGET");
+
+  const summary = [];
+  const tabel = [headers];
+
+  for (let i = 1; i < values.length; i++) {
+    const row = values[i];
+    if ((row[0] || "").toString().trim().toUpperCase() === "TARGET") continue; // skip target row
+
+    summary.push({
+      wilayah: (row[0] || "").toString().trim(),
+      bulan: bulanSekarang,
+      nilai: indexBulan >= 0 ? parseFloat(row[indexBulan]) : null,
+      avg: indexAVG >= 0 ? parseFloat(row[indexAVG]) : null,
+      target: indexBulan >= 0 && targetRow ? parseFloat(targetRow[indexBulan]) : null
+    });
+
+    tabel.push(row);
   }
 
-  finalData.unshift(headers);
-
-  return ContentService
-    .createTextOutput(JSON.stringify(finalData))
+  return ContentService.createTextOutput(JSON.stringify({ summary, tabel }))
     .setMimeType(ContentService.MimeType.JSON);
-
-
-  } else {
-    return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
+
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
