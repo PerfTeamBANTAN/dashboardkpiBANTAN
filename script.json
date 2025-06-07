@@ -6,7 +6,7 @@ function doGet(e) {
   if (kategori === 'racing mitra') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('RACING');
     const values = sheet.getDataRange().getValues();
-    data = values.slice(1, 13);  // baris 2–13
+    data = values.slice(1, 13);
     data = data.map(row => ({
       nama: row[0],
       sektor: row[1],
@@ -27,7 +27,7 @@ function doGet(e) {
   } else if (kategori === 'racing hsa') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('RACING');
     const values = sheet.getDataRange().getValues();
-    const sliced = values.slice(14, 23);  // baris 15–23
+    const sliced = values.slice(14, 23);
     data = sliced.map(row => ({
       nama: row[0],
       sektor: row[1],
@@ -50,7 +50,7 @@ function doGet(e) {
     const values = sheet.getDataRange().getValues();
     const headers = values[0];
     const body = values.slice(1);
-    
+
     data = body.map(row => {
       let obj = {};
       headers.forEach((h, i) => {
@@ -71,6 +71,26 @@ function doGet(e) {
       });
       return obj;
     });
+  } else if (kategori === 'racing ioan mitra') {
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('IOAN MITRA');
+    const values = sheet.getDataRange().getValues();
+
+    const headers = values[0];
+    const body = values.slice(1, 30);   
+    const rankingRow = values[30] || [];
+
+    const finalData = [...body];
+    if (rankingRow.length && rankingRow[0].toString().toLowerCase().includes('ranking')) {
+    finalData.push(rankingRow);
+  }
+
+  finalData.unshift(headers);
+
+  return ContentService
+    .createTextOutput(JSON.stringify(finalData))
+    .setMimeType(ContentService.MimeType.JSON);
+
+
   } else {
     return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
   }
