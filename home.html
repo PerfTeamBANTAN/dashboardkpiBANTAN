@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WSA Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
+    }
+    .navbar-brand {
+      font-weight: bold;
+      font-size: 24px;
+      color: #444;
+    }
+    .nav-link {
+      color: #333;
+    }
+    .dropdown-menu a {
+      font-size: 14px;
+    }
+    .card {
+      box-shadow: 0 0 15px rgba(0,0,0,0.05);
+      border-radius: 15px;
+    }
+    .highlight-box {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+    }
+    .card-header-indikator {
+    background-color: #7F7FFD;
+  }
+    .card-body.bg-green { background-color: #d4edda; border: 2px solid #28a745; }
+    .card-body.bg-yellow { background-color: #fff3cd; border: 2px solid #ffc107; }
+    .card-body.bg-red { background-color: #f8d7da; border: 2px solid #dc3545; }
+    .card-body.bg-orange { background-color: #ffe5b4; border: 2px solid #fd7e14; }
+    .card:hover .card-body { transform: scale(1.03); cursor: pointer; transition: transform 0.2s ease-in-out; }
+    
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#"><img src="PERFORMANCE TEAM.png" style="height: 40px; margin-right: 10px;">PERFORMANCE BAN-TAN</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="showNotAvailable()">Dashboards</a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="racingDropdown" role="button" data-bs-toggle="dropdown">Racing</a>
+            <ul class="dropdown-menu">
+	      <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Revenue TAN-BAN</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadData('Racing Mitra')">Racing Mitra</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadData('Racing HSA')">Racing HSA</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Racing IOAN Mitra</a></li>
+	            <li><a class="dropdown-item" href="#" onclick="loadData('Dashboard PI laten')">Dashboard PI laten</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadData('Dashboard IOAN B2C')">Dashboard IOAN B2C</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Dashboard Non IOAN B2B</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Dashboard WSA</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Dashboard MSA</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Dashboard MAINTENANCE</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="kpiioanDropdown" role="button" data-bs-toggle="dropdown">KPI IOAN</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Service Availability</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Assurance Guarantee</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">TTR</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Underspec</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Tangible</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Validasi</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">SQM</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">SCC</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Infracare</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Ext Audit</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="kpi12piDropdown" role="button" data-bs-toggle="dropdown">KPI 12 PI Laten</a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Gamas</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">PS/RE</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Wifi</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">HSI Datin</a></li>
+            </ul>
+          </li>
+	  <li class="nav-item dropdown">
+	    <a class="nav-link dropdown-toggle" href="#" id="kpiB2BDropdown" role="button" data-bs-toggle="dropdown">KPI Non Sektor B2B</a>
+            <ul class="dropdown-menu">
+	      <li><a class="dropdown-item" href="#">HSI</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">DATIN</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">WIFI</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">OLO</a></li>
+            </ul>
+	  </li>
+          <li class="nav-item dropdown">
+	    <a class="nav-link dropdown-toggle" href="#" id="kpiWSADropdown" role="button" data-bs-toggle="dropdown">KPI WSA</a>
+            <ul class="dropdown-menu">
+	      <li><a class="dropdown-item" href="#">FFG</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">TTI</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Service Availability</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Assurance Guarante</a></li>
+	      <li><a class="dropdown-item" href="#">TTR</a></li>
+	    </ul>
+	  </li>
+          <li class="nav-item dropdown">
+	    <a class="nav-link dropdown-toggle" href="#" id="kpiMTCDropdown" role="button" data-bs-toggle="dropdown">KPI Maintenance</a>
+            <ul class="dropdown-menu">
+	      <li><a class="dropdown-item" href="#">FTM</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">OLT</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">GAMAS</a></li>
+              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Pengawasan Project P3</a></li>
+	      <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Patroli Akses</a></li>
+        </li>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+   <div id="headerSection" class="text-center mb-4">
+  <img src="PERFORMANCE TEAM.png" alt="Performance Team" style="max-height: 80px;">
+  <h2>Welcome to PERFORMANCE TEAM Dashboard</h2>
+  <p>Live KPI monitoring integrated with Google Sheets</p>
+</div>
+<div id="loadingSpinner" class="text-center my-5" style="display:none;">
+  <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+  <p class="mt-2">Sedang memuat data...</p>
+</div>
+<div class="row" id="dashboardContent">
+      <!-- Data akan dimuat di sini -->
+    </div>
+  </div>
+
+  <script>
+  const scriptURL = 'https://script.google.com/macros/s/AKfycbwq85CIdDt06BPp4CayvtOwsjNcTuIAzzsfljN4gEa1m7PA74KbBC9RMmMk-ifltgf0/exec';
+
+
+	function showNotAvailable() {
+  showLoading();
+  setTimeout(() => {
+    hideLoading();
+  document.getElementById('headerSection').style.display = 'none';
+  document.getElementById('dashboardContent').innerHTML = `
+    <div class="text-center text-danger mt-5">
+      <h4>⚠️ Data belum di deploy bos, Sabar yak!!!</h4>
+      <p>Silakan cek kembali Google Apps Script atau spreadsheet-nya.</p>
+    </div>
+  `;
+}, 800);
+}
+function showLoading() {
+  document.getElementById("dashboardContent").innerHTML = "";
+  document.getElementById("loadingSpinner").style.display = "block";
+}
+
+function hideLoading() {
+  document.getElementById("loadingSpinner").style.display = "none";
+}
+  function loadData(kategori) {
+  showLoading();
+  document.getElementById('headerSection').style.display = 'none';
+  if (kategori.toLowerCase().includes('pi laten')) {
+    loadPiLaten();
+    return;
+  }
+  if (kategori.toLowerCase().includes('ioan b2c')) {
+    loadKpiB2c();
+    return;
+  }
+
+  fetch(`${scriptURL}?kategori=${encodeURIComponent(kategori)}`)
+    .then(response => {
+      if (!response.ok) throw new Error('HTTP error ' + response.status);
+      return response.json();
+    })
+    .then(data => {
+    hideLoading();
+      const container = document.getElementById('dashboardContent');
+      container.innerHTML = '';
+
+      if (data.length === 0) {
+        container.innerHTML = '<p class="text-center text-muted">Data tidak ditemukan.</p>';
+        return;
+      }
+const bulan = getBulanNamaIndonesia();
+let heading = '';
+
+if (kategori.toLowerCase().includes('mitra')) {
+  heading = `▀▄▀▄▀▄ RACING MITRA TANGERANG ${bulan} ▄▀▄▀▄▀`;
+} else if (kategori.toLowerCase().includes('hsa')) {
+  heading = `▀▄▀▄▀▄ RACING HSA TANGERANG ${bulan} ▄▀▄▀▄▀`;
+} else {
+  heading = `▀▄▀▄▀▄ RACING ${kategori.toUpperCase()} ${bulan} ▄▀▄▀▄▀`;
+}
+
+let html = `
+  <h4 class="text-center fw-bold mb-3">${heading}</h4>
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped table-sm text-center align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Nama</th>
+          <th>Jumlah Sektor</th>
+          <th>Induk GMS</th>
+          <th>ZERO GAMS</th>
+          <th>ACH ZERO</th>
+          <th>REAL 12PI</th>
+          <th>ACH 12PI</th>
+          <th>REAL KPI</th>
+          <th>ACH KPI</th>
+          <th>REAL TNPS</th>
+          <th>ACH TNPS</th>
+          <th>REAL PSB</th>
+          <th>ACH PSB</th>
+          <th>REALISASI</th>
+          <th>RANK</th>
+        </tr>
+      </thead>
+      <tbody>
+`;
+      data
+  .filter(row => row.nama && row.nama.toString().trim() !== '')
+  .forEach(row => {
+    html += `
+      <tr>
+        <td>${row.nama}</td>
+        <td>${row.sektor}</td>
+        <td>${row.gms}</td>
+        <td>${parseFloat(row.zero).toFixed(2)}</td>
+  <td>${parseFloat(row.ach_zero).toFixed(2)}</td>
+  <td>${parseFloat(row.pi12).toFixed(2)}</td>
+  <td>${parseFloat(row.ach_pi12).toFixed(2)}</td>
+  <td>${parseFloat(row.kpi).toFixed(2)}</td>
+  <td>${parseFloat(row.ach_kpi).toFixed(2)}</td>
+  <td>${parseFloat(row.tnps).toFixed(2)}</td>
+  <td>${parseFloat(row.ach_tnps).toFixed(2)}</td>
+  <td>${parseFloat(row.psb).toFixed(2)}</td>
+  <td>${parseFloat(row.ach_psb).toFixed(2)}</td>
+  <td>${parseFloat(row.realisasi).toFixed(2)}</td>
+  <td>${parseInt(row.rank)}</td>
+</td>
+      </tr>
+    `;
+  });
+
+      html += `</tbody></table></div>`;
+      const now = new Date();
+const tanggal = now.toLocaleDateString('id-ID');
+const waktu = now.toLocaleTimeString('id-ID');
+
+// Tentukan label report
+let reportJudul = '';
+let reportKolom = '';
+let isMitraIOAN = kategori.toLowerCase().includes('ioan') && kategori.toLowerCase().includes('mitra');
+let isHsa = kategori.toLowerCase().includes('hsa');
+
+if (isHsa) {
+  reportJudul = `▀▄▀▄  *Report Pencapaian RACING HSA TANGERANG* ▄▀▄▀\n==========================`;
+  reportKolom = 'REALISASI';
+} else if (isMitraIOAN) {
+  reportJudul = `*Report Pencapaian KPI IOAN MITRA DIST (B2C)*`;
+  reportKolom = 'ACH';
+} else {
+  reportJudul = `*Report Pencapaian RACING ${kategori.toUpperCase()}*`;
+  reportKolom = 'REALISASI';
+}
+
+// Susun isi rank
+let reportBody = `\n_Posisi :_  ${tanggal} ${waktu}\nRANK  ${isMitraIOAN ? 'MITRA' : 'HSA'}  ${reportKolom}\n`;
+
+data
+  .filter(row => row.rank && row.nama) // Hindari baris kosong
+  .sort((a, b) => parseFloat(a.rank) - parseFloat(b.rank)) // Urut berdasarkan rank
+  .forEach((row, idx, arr) => {
+    const isJuara = idx === 0 ? ' 🏆' : '';
+    const isTerkahir = idx === arr.length - 1 ? ' ☠️' : '';
+    const nilai = isMitraIOAN ? row.ach_kpi : row.realisasi;
+    reportBody += `${parseInt(row.rank)}  ${row.nama}  ${parseFloat(nilai).toFixed(2)}${isJuara}${isTerkahir}\n`;
+  });
+
+html += `<pre class="mt-3">${reportJudul}${reportBody}</pre>`;
+      container.innerHTML = html;
+    })
+    .catch(err => {
+    hideLoading();
+      console.error('Gagal muat:', err);
+      document.getElementById('dashboardContent').innerHTML =
+        '<p class="text-danger text-center">Gagal memuat data.</p>';
+    });
+}
+
+
+function getBulanNamaIndonesia() {
+  const bulan = [
+    "JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI",
+    "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"
+  ];
+  const now = new Date();
+  return bulan[now.getMonth()];
+} 
+function loadPiLaten() {
+	showLoading();
+  const container = document.getElementById('dashboardContent');
+  container.innerHTML = `
+    <div class="container py-3">
+      <h5 class="mb-3">📊 12 PI laten District BANTEN</h5>
+      <div class="row row-cols-2 row-cols-md-6 g-3 mb-4" id="summaryCards12"></div>
+      <div id="perbandinganTables" class="mb-5"></div>
+      <div id="gagalTable" class="mt-4"></div>
+    </div>`;
+
+  fetch(`${scriptURL}?kategori=12 pi laten`)
+    .then(response => response.json())
+    .then(data => {
+    	hideLoading();
+      renderSummary12Indikator(data);
+      renderPerbandinganTables(data);
+      renderTabelGagal(data);
+    })
+    .catch(err => {
+    	hideLoading();	
+      console.error("Gagal mengambil data PI Laten:", err.message);
+      container.innerHTML = '<p class="text-danger text-center">Gagal memuat data 12 PI Laten.</p>';
+    });
+}
+
+function renderSummary12Indikator(data) {
+  const indikatorList = [
+    "TTRC Gamas Distribusi", "TTRC Gamas Feeder", "TTRC Gamas ODP", "TTRC 36H FBB", "PS/RE",
+    "Latency RAN to Core", "MTTRi Critical", "Wifi Revitalization", "Underspec Waranty HSI",
+    "TTRC K2,K1 Datin", "TTRD Non HSI", "Asgar Datin"
+  ];
+
+  const container = document.getElementById("summaryCards12");
+  if (!container) return;
+  container.innerHTML = "";
+
+  indikatorList.forEach(indikator => {
+    const key = indikator.toUpperCase().trim();
+    const match = data.find(item => (item.INDIKATOR || "").toUpperCase().trim() === key);
+    const target = parseFloat(match?.TARGET) || 0;
+
+    const banten = parseFloat(
+      data.find(item => (item.INDIKATOR || "").toUpperCase().trim() === key && (item.WITEL || "").toUpperCase().includes("BANTEN"))?.REAL
+    ) || 0;
+    const tangerang = parseFloat(
+      data.find(item => (item.INDIKATOR || "").toUpperCase().trim() === key && (item.WITEL || "").toUpperCase().includes("TANGERANG"))?.REAL
+    ) || 0;
+
+    let warna = "bg-green";
+    if (banten < target && tangerang < target) {
+      warna = "bg-red";
+    } else if ((banten < target && tangerang >= target) || (tangerang < target && banten >= target)) {
+      warna = "bg-yellow";
+    } else if (
+      (Math.abs(banten - target) / target <= 0.03 && banten < target) ||
+      (Math.abs(tangerang - target) / target <= 0.03 && tangerang < target)
+    ) {
+      warna = "bg-orange";
+    }
+
+    container.innerHTML += `
+      <div class="col">
+        <div class="card h-100 border-secondary" title="${indikator}\nTarget: ${target}%\nBanten: ${banten}%\nTangerang: ${tangerang}%">
+          <div class="card-header text-center card-header-indikator">
+            <strong style="font-size: 0.8rem;">${indikator}</strong>
+          </div>
+          <div class="card-body text-center p-2 ${warna}">
+            <p style="font-size: 0.75rem;">
+              <strong>Target:</strong> ${target}%<br>
+              <span style="color: ${banten < target ? 'red' : 'black'};"><strong>Banten:</strong> ${banten}%</span><br>
+              <span style="color: ${tangerang < target ? 'red' : 'black'};"><strong>Tangerang:</strong> ${tangerang}%</span>
+              </p>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function renderPerbandinganTables(data) {
+  const witelData = { BANTEN: [], TANGERANG: [] };
+  data.forEach(item => {
+    const witel = (item.WITEL || "").toUpperCase();
+    const sto = (item.STO || "").toUpperCase();
+    if (witel.includes("BANTEN") && sto === "BANTEN") {
+      witelData.BANTEN.push(item);
+    } else if (witel.includes("TANGERANG") && sto === "TANGERANG") {
+      witelData.TANGERANG.push(item);
+    }
+  });
+
+  const tableSection = document.getElementById("perbandinganTables");
+  if (!tableSection) return;
+  tableSection.innerHTML = `
+    <div class="row">
+      <div class="col-md-6">
+        <h6 class="text-center">WITEL TANGERANG</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered align-middle">
+            <thead class="table-light text-center">
+              <tr><th>INDIKATOR</th><th>TARGET</th><th>REAL</th><th>ACH %</th><th>STATUS</th></tr>
+            </thead>
+            <tbody>
+              ${generateTableRows(witelData.TANGERANG)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h6 class="text-center">WITEL BANTEN</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered align-middle">
+            <thead class="table-light text-center">
+              <tr><th>INDIKATOR</th><th>TARGET</th><th>REAL</th><th>ACH %</th><th>STATUS</th></tr>
+            </thead>
+            <tbody>
+              ${generateTableRows(witelData.BANTEN)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+function renderTabelGagal(data) {
+  const groupedByWitel = {};
+
+  data.forEach(item => {
+    const ach = parseFloat(item["ACH %"]) || 0;
+    const bobot = parseFloat(item.BOBOT) || 0;
+    const indikator = (item.INDIKATOR || "").trim().toUpperCase();
+    const sto = (item.STO || "").trim().toUpperCase();
+    const hsa = (item.HSA || "").trim().toUpperCase();
+    const witel = (item.WITEL || "").trim().toUpperCase();
+
+    // Saring data yang tidak diperlukan
+    if (
+      indikator === "TOTAL ACH" ||
+      sto === "TANGERANG" || sto === "BANTEN" ||
+      ach === bobot
+    ) return;
+
+    if (!groupedByWitel[witel]) {
+      groupedByWitel[witel] = {};
+    }
+
+    const key = `${indikator}|${hsa}`;
+    if (!groupedByWitel[witel][key]) {
+      groupedByWitel[witel][key] = { indikator, hsa, stos: [] };
+    }
+
+    if (!groupedByWitel[witel][key].stos.includes(sto)) {
+      groupedByWitel[witel][key].stos.push(sto);
+    }
+  });
+
+  const gagalDiv = document.getElementById("gagalTable");
+  if (!gagalDiv) return;
+
+  // Bangun tabel HTML per WITEL
+  let html = `<h6 class="text-center text-danger">Indikator dengan Status ❌</h6>`;
+
+  Object.keys(groupedByWitel).sort().forEach(witel => {
+    const rows = Object.values(groupedByWitel[witel]).sort((a, b) =>
+      a.indikator.localeCompare(b.indikator)
+    );
+
+    html += `
+      <h6 class="mt-4 text-primary">WITEL ${witel}</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle">
+          <thead class="table-danger text-center">
+            <tr>
+              <th>INDIKATOR</th>
+              <th>STO</th>
+              <th>HSA</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(item => `
+              <tr>
+                <td>${item.indikator}</td>
+                <td>${item.stos.join(" , ")}</td>
+                <td>HSA : ${item.hsa}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  });
+
+  gagalDiv.innerHTML = html;
+}
+
+function generateTableRows(data) {
+  return data
+    .filter(item => item.INDIKATOR && item.TARGET && item.REAL && item["ACH %"] != null)
+    .map(item => {
+      const ach = parseFloat(item["ACH %"]) || 0;
+      const bobot = parseFloat(item.BOBOT) || 0;
+      const status = ach === bobot ? '✅' : '❌';
+      return `<tr>
+        <td>${item.INDIKATOR}</td>
+        <td>${item.TARGET}</td>
+        <td>${item.REAL}</td>
+        <td>${ach.toFixed(2)}</td>
+        <td class="text-center">${status}</td>
+      </tr>`;
+    }).join("");
+}
+function loadKpiB2c() {
+  showLoading();
+
+  fetch(`${scriptURL}?kategori=dashboard ioan b2c`)
+    .then(response => response.json())
+    .then(data => {
+      hideLoading();
+      document.getElementById("headerSection").style.display = "none";
+
+      const container = document.getElementById("dashboardContent");
+      container.innerHTML = `
+        <div class="container py-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5>📊 Dashboard KPI IOAN B2C</h5>
+            <button id="btnToggleTables" class="btn btn-secondary btn-sm">Tampilkan Perbandingan Tabel</button>
+          </div>
+          <div id="kpiB2cContent"></div>
+          <div id="perbandinganTables" class="mt-4" style="display:none;"></div>
+          <div id="gagalTable" class="mt-4"></div>
+        </div>
+      `;
+
+      window.kpiB2cData = data;
+      renderKpiB2c();
+
+      // Event toggle untuk tabel perbandingan
+      document.getElementById("btnToggleTables").addEventListener("click", () => {
+        const tableSection = document.getElementById("perbandinganTables");
+        if (tableSection.style.display === "none") {
+          tableSection.style.display = "block";
+          renderPerbandinganTables(data);
+          renderTabelGagal(data);
+          document.getElementById("btnToggleTables").textContent = "Sembunyikan Perbandingan Tabel";
+        } else {
+          tableSection.style.display = "none";
+          document.getElementById("gagalTable").innerHTML = "";
+          document.getElementById("btnToggleTables").textContent = "Tampilkan Perbandingan Tabel";
+        }
+      });
+    })
+    .catch(err => {
+      hideLoading();
+      document.getElementById("dashboardContent").innerHTML =
+        '<p class="text-danger text-center">Gagal memuat data KPI B2C.</p>';
+      console.error("Error loadKpiB2c:", err);
+    });
+}
+
+// Fungsi render utama KPI B2C (menggunakan indikator list dan logika pewarnaan)
+function renderKpiB2c() {
+  const container = document.getElementById("kpiB2cContent");
+  const data = window.kpiB2cData || [];
+
+  const indikatorList = [
+    "Assurance guarantee All",
+    "Service Availability (All Teknis)",
+    "Q Gangguan (All Teknis)",
+    "TTR COMP - 36JAM (Non HVC)",
+    "TTR COMP - 3H HVC (D,V)",
+    "TTR COMP - 3H Manja",
+    "TTR COMP - 6H (P)",
+    "TTR COMP - 12H (Gold)",
+    "Tangible ODP (Kuantitas)",
+    "Tangible ODP (Kualitas)",
+    "Tangible ODC (Kuantitas)",
+    "Tangible ODC (Kualitas)",
+    "VALINS DC QR Code & Service",
+    "VALINS Visit ODP",
+    "Validasi ODC",
+    "Validasi Connect ODP-OLT",
+    "Validasi Tiang",
+    "TTR Comply SQM 4H (Exclude tiket AWH)",
+    "Unspec Non Warranty",
+    "Closed SQM",
+    "SCC Inet",
+    "SCC Voice",
+    "InfraCare - Tiket Close",
+    "Rasio INUSE to INSTOCK - Dropcore Refurbish",
+  ];
+
+  // Ambil dan render tiap indikator dengan color code sesuai kondisi target vs real
+  const cards = indikatorList.map(indikator => {
+    let target = 0, realTangerang = 0, realBanten = 0;
+
+    const tgr = data.find(row => row.INDIKATOR === indikator && (row.STO || "").toUpperCase().includes("TANGERANG"));
+    const ban = data.find(row => row.INDIKATOR === indikator && (row.STO || "").toUpperCase().includes("BANTEN"));
+    target = parseFloat(tgr?.TARGET || ban?.TARGET || 0);
+    realTangerang = parseFloat(tgr?.REAL || 0);
+    realBanten = parseFloat(ban?.REAL || 0);
+
+    let warna = "bg-green";
+    if (realBanten < target && realTangerang < target) warna = "bg-red";
+    else if ((realBanten < target && realTangerang >= target) || (realTangerang < target && realBanten >= target)) warna = "bg-yellow";
+    else if (
+      (Math.abs(realBanten - target) / (target || 1) <= 0.03 && realBanten < target) ||
+      (Math.abs(realTangerang - target) / (target || 1) <= 0.03 && realTangerang < target)
+    ) warna = "bg-orange";
+
+    return `
+      <div class="col">
+        <div class="card h-100 border-secondary" title="${indikator}">
+          <div class="card-header text-center card-header-indikator">
+            <strong style="font-size: 0.8rem;">${indikator}</strong>
+          </div>
+          <div class="card-body text-center p-2 ${warna}">
+            <p style="font-size: 0.75rem;">
+              <strong>Target:</strong> ${target.toFixed(2)}%<br>
+              <span style="color: ${realBanten < target ? 'red' : 'black'};"><strong>Banten:</strong> ${realBanten.toFixed(2)}%</span><br>
+              <span style="color: ${realTangerang < target ? 'red' : 'black'};"><strong>Tangerang:</strong> ${realTangerang.toFixed(2)}%</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  container.innerHTML = `
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
+        ${cards}
+    </div>
+  `;
+}
+
+// Fungsi helper generate baris tabel dari data di perbandingan
+function generateTableRows(data) {
+  return data.map(item => {
+    const target = parseFloat(item.TARGET) || 0;
+    const real = parseFloat(item.REAL) || 0;
+    const ach = target > 0 ? (real / target) * 100 : 0;
+    let status = "✅";
+    if (ach < 100) status = "❌";
+
+    return `<tr>
+      <td>${item.INDIKATOR || ""}</td>
+      <td class="text-end">${target.toFixed(2)}</td>
+      <td class="text-end">${real.toFixed(2)}</td>
+      <td class="text-end">${ach.toFixed(2)}%</td>
+      <td class="text-center">${status}</td>
+    </tr>`;
+  }).join("");
+}
+
+// Fungsi render perbandingan tabel sesuai request
+function renderPerbandinganTables(data) {
+  const witelData = { BANTEN: [], TANGERANG: [] };
+  data.forEach(item => {
+    const witel = (item.WITEL || "").toUpperCase();
+    const sto = (item.STO || "").toUpperCase();
+    if (witel.includes("BANTEN") && sto === "BANTEN") {
+      witelData.BANTEN.push(item);
+    } else if (witel.includes("TANGERANG") && sto === "TANGERANG") {
+      witelData.TANGERANG.push(item);
+    }
+  });
+
+  const tableSection = document.getElementById("perbandinganTables");
+  if (!tableSection) return;
+  tableSection.innerHTML = `
+    <div class="row">
+      <div class="col-md-6">
+        <h6 class="text-center">WITEL TANGERANG</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered align-middle">
+            <thead class="table-light text-center">
+              <tr><th>INDIKATOR</th><th>TARGET</th><th>REAL</th><th>ACH %</th><th>STATUS</th></tr>
+            </thead>
+            <tbody>
+              ${generateTableRows(witelData.TANGERANG)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h6 class="text-center">WITEL BANTEN</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered align-middle">
+            <thead class="table-light text-center">
+              <tr><th>INDIKATOR</th><th>TARGET</th><th>REAL</th><th>ACH %</th><th>STATUS</th></tr>
+            </thead>
+            <tbody>
+              ${generateTableRows(witelData.BANTEN)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+
+// Fungsi render tabel gagal (indikator dengan status ❌)
+function renderTabelGagal(data) {
+  const groupedByWitel = {};
+
+  data.forEach(item => {
+    const ach = parseFloat(item["ACH %"]) || 0;
+    const bobot = parseFloat(item.BOBOT) || 0;
+    const indikator = (item.INDIKATOR || "").trim().toUpperCase();
+    const sto = (item.STO || "").trim().toUpperCase();
+    const hsa = (item.HSA || "").trim().toUpperCase();
+    const witel = (item.WITEL || "").trim().toUpperCase();
+
+    // Saring data yang tidak diperlukan
+    if (
+      indikator === "TOTAL ACH" ||
+      sto === "TANGERANG" || sto === "BANTEN" ||
+      ach === bobot
+    ) return;
+
+    if (!groupedByWitel[witel]) {
+      groupedByWitel[witel] = {};
+    }
+
+    const key = `${indikator}|${hsa}`;
+    if (!groupedByWitel[witel][key]) {
+      groupedByWitel[witel][key] = { indikator, hsa, stos: [] };
+    }
+
+    if (!groupedByWitel[witel][key].stos.includes(sto)) {
+      groupedByWitel[witel][key].stos.push(sto);
+    }
+  });
+
+  const gagalDiv = document.getElementById("gagalTable");
+  if (!gagalDiv) return;
+
+  // Bangun tabel HTML per WITEL
+  let html = `<h6 class="text-center text-danger">Indikator dengan Status ❌</h6>`;
+
+  Object.keys(groupedByWitel).sort().forEach(witel => {
+    const rows = Object.values(groupedByWitel[witel]).sort((a, b) =>
+      a.indikator.localeCompare(b.indikator)
+    );
+
+    html += `
+      <h6 class="mt-4 text-primary">WITEL ${witel}</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle">
+          <thead class="table-danger text-center">
+            <tr>
+              <th>INDIKATOR</th>
+              <th>STO</th>
+              <th>HSA</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr>
+                <td>${row.indikator}</td>
+                <td>${row.stos.join(", ")}</td>
+                <td>${row.hsa}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>`;
+  });
+
+  gagalDiv.innerHTML = html;
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
