@@ -40,6 +40,7 @@
     .card:hover .card-body { transform: scale(1.03); cursor: pointer; transition: transform 0.2s ease-in-out; }
     
   </style>
+  
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
@@ -71,7 +72,7 @@
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="kpiioanDropdown" role="button" data-bs-toggle="dropdown">KPI IOAN</a>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Service Availability</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadServiceAvailability()">Service Availability</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Assurance Guarantee</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">TTR</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Underspec</a></li>
@@ -139,6 +140,7 @@
 <div class="row" id="dashboardContent">
       <!-- Data akan dimuat di sini -->
     </div>
+<div id="saTable" class="mt-5"></div>
   </div>
 
   <script>
@@ -176,6 +178,10 @@ function loadData(kategori) {
   }
   if (kategori.toLowerCase().includes('ioan b2c')) {
     loadKpiB2c();
+    return;
+  }
+  if (kategori.toLowerCase().includes('service availability')) {
+    loadServiceAvailability();
     return;
   }
 
@@ -808,7 +814,96 @@ function renderTabelGagal(data) {
 
   gagalDiv.innerHTML = html;
 }
+function loadServiceAvailability() {
+  showLoading();
+  document.getElementById('headerSection').style.display = 'none'; // Sembunyikan welcome saat loading
+
+  fetch(`${scriptURL}?kategori=service availability`)
+    .then(response => {
+      if(!response.ok) throw new Error("Network response was not ok");
+      return response.json();
+    })
+    .then(data => {
+      hideLoading();
+
+      if (!data.summary || data.summary.length === 0) {
+        document.getElementById("dashboardContent").innerHTML = '<p class="text-center text-danger">Data summary tidak tersedia.</p>';
+        return;
+      }
+
+      // Filter wilayah Banten dan Tangerang untuk card
+      let filteredSummary = data.summary.filter(item =>
+        item.wilayah.toUpperCase() === 'BANTEN' || item.wilayah.toUpperCase() === 'TANGERANG'
+      );
+
+      let htmlCards = '<div class="row justify-content-center">';
+      filteredSummary.forEach(item => {
+        const nilai = item.nilai ?? 0;
+        const target = item.target ?? 98.52; // Gunakan nilai target dari data asli
+        const nilaiClass = nilai < target ? 'text-danger fw-bold' : 'text-success fw-bold';
+
+        htmlCards += `
+          <div class="card m-2" style="width: 18rem;">
+            <div class="card-body text-center">
+              <h5 class="card-title">${item.wilayah}</h5>
+              <p>Nilai: <span class="${nilaiClass}">${nilai.toFixed(2)}%</span></p>
+              <p>Target: ${target.toFixed(2)}%</p>
+              <p>Bulan: ${item.bulan}</p>
+              <p>Rata-rata (AVG): ${item.avg !== null ? item.avg.toFixed(2) + '%' : '-'}</p>
+            </div>
+          </div>
+        `;
+      });
+      htmlCards += '</div>';
+
+      // Tabel dengan pewarnaan sesuai target di setiap baris
+      let tableHtml = `
+        <div class="table-responsive mt-4">
+          <table class="table table-bordered table-striped table-hover table-sm w-auto" style="font-size: 0.8rem;">
+            <thead>
+              <tr>
+                ${data.tabel[0].map(th => `<th>${th}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.tabel.slice(1).map(row => {
+                const target = parseFloat(row[1]) || 0;
+                return `
+                  <tr>
+                    ${row.map((td, idx) => {
+                      if (idx > 1 && idx < row.length) {
+                        const nilai = parseFloat(td);
+                        if (nilai < target) {
+                          return `<td class="text-danger">${td}</td>`;
+                        }
+                      }
+                      return `<td>${td}</td>`;
+                    }).join('')}
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      document.getElementById('dashboardContent').innerHTML = `
+        <h5 class="mb-4 text-center">📊 KPI IOAN - Service Availability</h5>
+        ${htmlCards}
+        <hr/>
+        <h5 class="mt-4">Tabel Service Availability Seluruh Wilayah</h5>
+        ${tableHtml}
+      `;
+    })
+    .catch(error => {
+      hideLoading();
+      console.error("Fetch error:", error);
+      document.getElementById('dashboardContent').innerHTML = '<p class="text-center text-danger">Gagal memuat data Service Availability.</p>';
+    });
+}
+
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
