@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Performansi Team Dashboard</title>
+  <title>WSA Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
@@ -59,7 +59,7 @@
 	      <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Revenue TAN-BAN</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadData('Racing Mitra')">Racing Mitra</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadData('Racing HSA')">Racing HSA</a></li>
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Racing IOAN Mitra</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadData('Racing IOAN Mitra')">Racing IOAN Mitra</a></li>
 	            <li><a class="dropdown-item" href="#" onclick="loadData('Dashboard PI laten')">Dashboard PI laten</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadData('Dashboard IOAN B2C')">Dashboard IOAN B2C</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Dashboard Non IOAN B2B</a></li>
@@ -128,7 +128,7 @@
    <div id="headerSection" class="text-center mb-4">
   <img src="PERFORMANCE TEAM.png" alt="Performance Team" style="max-height: 80px;">
   <h2>Welcome to PERFORMANCE TEAM Dashboard</h2>
-  <p>Live KPI monitoring integrated with Google Sheets Team Performansi</p>
+  <p>Live KPI monitoring integrated with Google Sheets</p>
 </div>
 <div id="loadingSpinner" class="text-center my-5" style="display:none;">
   <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
@@ -153,7 +153,7 @@
   document.getElementById('dashboardContent').innerHTML = `
     <div class="text-center text-danger mt-5">
       <h4>⚠️ Data belum di deploy bos, Sabar yak!!!</h4>
-      <p>Silakan cek di Google spreadsheet-nya dulu hingga proses develop backend-nya selesai.</p>
+      <p>Silakan cek kembali Google Apps Script atau spreadsheet-nya.</p>
     </div>
   `;
 }, 800);
@@ -166,9 +166,10 @@ function showLoading() {
 function hideLoading() {
   document.getElementById("loadingSpinner").style.display = "none";
 }
-  function loadData(kategori) {
+function loadData(kategori) {
   showLoading();
   document.getElementById('headerSection').style.display = 'none';
+
   if (kategori.toLowerCase().includes('pi laten')) {
     loadPiLaten();
     return;
@@ -184,7 +185,7 @@ function hideLoading() {
       return response.json();
     })
     .then(data => {
-    hideLoading();
+      hideLoading();
       const container = document.getElementById('dashboardContent');
       container.innerHTML = '';
 
@@ -192,114 +193,144 @@ function hideLoading() {
         container.innerHTML = '<p class="text-center text-muted">Data tidak ditemukan.</p>';
         return;
       }
-const bulan = getBulanNamaIndonesia();
-let heading = '';
 
-if (kategori.toLowerCase().includes('mitra')) {
-  heading = `▀▄▀▄▀▄ RACING MITRA TANGERANG ${bulan} ▄▀▄▀▄▀`;
-} else if (kategori.toLowerCase().includes('hsa')) {
-  heading = `▀▄▀▄▀▄ RACING HSA TANGERANG ${bulan} ▄▀▄▀▄▀`;
-} else {
-  heading = `▀▄▀▄▀▄ RACING ${kategori.toUpperCase()} ${bulan} ▄▀▄▀▄▀`;
-}
+      const bulan = getBulanNamaIndonesia();
+      const isIOANMitraTable = kategori.toLowerCase().includes('racing ioan mitra');
+      const isHsa = kategori.toLowerCase().includes('hsa');
+      const isMitraIOAN = kategori.toLowerCase().includes('ioan') && kategori.toLowerCase().includes('mitra');
 
-let html = `
-  <h4 class="text-center fw-bold mb-3">${heading}</h4>
-  <div class="table-responsive">
-    <table class="table table-bordered table-striped table-sm text-center align-middle">
-      <thead class="table-dark">
-        <tr>
-          <th>Nama</th>
-          <th>Jumlah Sektor</th>
-          <th>Induk GMS</th>
-          <th>ZERO GAMS</th>
-          <th>ACH ZERO</th>
-          <th>REAL 12PI</th>
-          <th>ACH 12PI</th>
-          <th>REAL KPI</th>
-          <th>ACH KPI</th>
-          <th>REAL TNPS</th>
-          <th>ACH TNPS</th>
-          <th>REAL PSB</th>
-          <th>ACH PSB</th>
-          <th>REALISASI</th>
-          <th>RANK</th>
-        </tr>
-      </thead>
-      <tbody>
-`;
+      let heading = '';
+      if (kategori.toLowerCase().includes('mitra')) {
+        heading = `▀▄▀▄▀▄ RACING MITRA TANGERANG ${bulan} ▄▀▄▀▄▀`;
+      } else if (kategori.toLowerCase().includes('hsa')) {
+        heading = `▀▄▀▄▀▄ RACING HSA TANGERANG ${bulan} ▄▀▄▀▄▀`;
+      } else {
+        heading = `▀▄▀▄▀▄ RACING ${kategori.toUpperCase()} ${bulan} ▄▀▄▀▄▀`;
+      }
+
+      // === KHUSUS IOAN MITRA FULL TABEL ===
+      if (isIOANMitraTable) {
+        let html = `
+          <h4 class="text-center fw-bold mb-3">📊 RACING IOAN MITRA - DISTRICT BANTEN</h4>
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped table-sm text-center align-middle">
+        `;
+
+        const headerRow = data[0];
+        html += `<thead class="table-dark"><tr>`;
+        headerRow.forEach(col => {
+          html += `<th>${col}</th>`;
+        });
+        html += `</tr></thead><tbody>`;
+
+        const bodyRows = data.slice(1);
+        bodyRows.forEach(row => {
+          html += `<tr>`;
+          row.forEach(cell => {
+            const value = typeof cell === 'number' ? cell.toFixed(2) : cell;
+            html += `<td>${value}</td>`;
+          });
+          html += `</tr>`;
+        });
+
+        html += `</tbody></table></div>`;
+        container.innerHTML = html;
+        return;
+      }
+
+      // === DEFAULT: RACING MITRA / HSA ===
+      let html = `
+        <h4 class="text-center fw-bold mb-3">${heading}</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped table-sm text-center align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Nama</th>
+                <th>Jumlah Sektor</th>
+                <th>Induk GMS</th>
+                <th>ZERO GAMS</th>
+                <th>ACH ZERO</th>
+                <th>REAL 12PI</th>
+                <th>ACH 12PI</th>
+                <th>REAL KPI</th>
+                <th>ACH KPI</th>
+                <th>REAL TNPS</th>
+                <th>ACH TNPS</th>
+                <th>REAL PSB</th>
+                <th>ACH PSB</th>
+                <th>REALISASI</th>
+                <th>RANK</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
       data
-  .filter(row => row.nama && row.nama.toString().trim() !== '')
-  .forEach(row => {
-    html += `
-      <tr>
-        <td>${row.nama}</td>
-        <td>${row.sektor}</td>
-        <td>${row.gms}</td>
-        <td>${parseFloat(row.zero).toFixed(2)}</td>
-  <td>${parseFloat(row.ach_zero).toFixed(2)}</td>
-  <td>${parseFloat(row.pi12).toFixed(2)}</td>
-  <td>${parseFloat(row.ach_pi12).toFixed(2)}</td>
-  <td>${parseFloat(row.kpi).toFixed(2)}</td>
-  <td>${parseFloat(row.ach_kpi).toFixed(2)}</td>
-  <td>${parseFloat(row.tnps).toFixed(2)}</td>
-  <td>${parseFloat(row.ach_tnps).toFixed(2)}</td>
-  <td>${parseFloat(row.psb).toFixed(2)}</td>
-  <td>${parseFloat(row.ach_psb).toFixed(2)}</td>
-  <td>${parseFloat(row.realisasi).toFixed(2)}</td>
-  <td>${parseInt(row.rank)}</td>
-</td>
-      </tr>
-    `;
-  });
+        .filter(row => row.nama && row.nama.toString().trim() !== '')
+        .forEach(row => {
+          html += `
+            <tr>
+              <td>${row.nama}</td>
+              <td>${row.sektor}</td>
+              <td>${row.gms}</td>
+              <td>${parseFloat(row.zero).toFixed(2)}</td>
+              <td>${parseFloat(row.ach_zero).toFixed(2)}</td>
+              <td>${parseFloat(row.pi12).toFixed(2)}</td>
+              <td>${parseFloat(row.ach_pi12).toFixed(2)}</td>
+              <td>${parseFloat(row.kpi).toFixed(2)}</td>
+              <td>${parseFloat(row.ach_kpi).toFixed(2)}</td>
+              <td>${parseFloat(row.tnps).toFixed(2)}</td>
+              <td>${parseFloat(row.ach_tnps).toFixed(2)}</td>
+              <td>${parseFloat(row.psb).toFixed(2)}</td>
+              <td>${parseFloat(row.ach_psb).toFixed(2)}</td>
+              <td>${parseFloat(row.realisasi).toFixed(2)}</td>
+              <td>${parseInt(row.rank)}</td>
+            </tr>
+          `;
+        });
 
       html += `</tbody></table></div>`;
+
+      // === Laporan Ranking Ringkas ===
       const now = new Date();
-const tanggal = now.toLocaleDateString('id-ID');
-const waktu = now.toLocaleTimeString('id-ID');
+      const tanggal = now.toLocaleDateString('id-ID');
+      const waktu = now.toLocaleTimeString('id-ID');
 
-// Tentukan label report
-let reportJudul = '';
-let reportKolom = '';
-let isMitraIOAN = kategori.toLowerCase().includes('ioan') && kategori.toLowerCase().includes('mitra');
-let isHsa = kategori.toLowerCase().includes('hsa');
+      let reportJudul = '';
+      let reportKolom = '';
+      if (isHsa) {
+        reportJudul = `▀▄▀▄  *Report Pencapaian RACING HSA TANGERANG* ▄▀▄▀\n==========================`;
+        reportKolom = 'REALISASI';
+      } else if (isMitraIOAN) {
+        reportJudul = `*Report Pencapaian KPI IOAN MITRA DIST (B2C)*`;
+        reportKolom = 'ACH';
+      } else {
+        reportJudul = `*Report Pencapaian RACING ${kategori.toUpperCase()}*`;
+        reportKolom = 'REALISASI';
+      }
 
-if (isHsa) {
-  reportJudul = `▀▄▀▄  *Report Pencapaian RACING HSA TANGERANG* ▄▀▄▀\n==========================`;
-  reportKolom = 'REALISASI';
-} else if (isMitraIOAN) {
-  reportJudul = `*Report Pencapaian KPI IOAN MITRA DIST (B2C)*`;
-  reportKolom = 'ACH';
-} else {
-  reportJudul = `*Report Pencapaian RACING ${kategori.toUpperCase()}*`;
-  reportKolom = 'REALISASI';
-}
+      let reportBody = `\n_Posisi :_  ${tanggal} ${waktu}\nRANK  ${isMitraIOAN ? 'MITRA' : 'HSA'}  ${reportKolom}\n`;
 
-// Susun isi rank
-let reportBody = `\n_Posisi :_  ${tanggal} ${waktu}\nRANK  ${isMitraIOAN ? 'MITRA' : 'HSA'}  ${reportKolom}\n`;
+      data
+        .filter(row => row.rank && row.nama)
+        .sort((a, b) => parseFloat(a.rank) - parseFloat(b.rank))
+        .forEach((row, idx, arr) => {
+          const isJuara = idx === 0 ? ' 🏆' : '';
+          const isTerkahir = idx === arr.length - 1 ? ' ☠️' : '';
+          const nilai = isMitraIOAN ? row.ach_kpi : row.realisasi;
+          reportBody += `${parseInt(row.rank)}  ${row.nama}  ${parseFloat(nilai).toFixed(2)}${isJuara}${isTerkahir}\n`;
+        });
 
-data
-  .filter(row => row.rank && row.nama) // Hindari baris kosong
-  .sort((a, b) => parseFloat(a.rank) - parseFloat(b.rank)) // Urut berdasarkan rank
-  .forEach((row, idx, arr) => {
-    const isJuara = idx === 0 ? ' 🏆' : '';
-    const isTerkahir = idx === arr.length - 1 ? ' ☠️' : '';
-    const nilai = isMitraIOAN ? row.ach_kpi : row.realisasi;
-    reportBody += `${parseInt(row.rank)}  ${row.nama}  ${parseFloat(nilai).toFixed(2)}${isJuara}${isTerkahir}\n`;
-  });
-
-html += `<pre class="mt-3">${reportJudul}${reportBody}</pre>`;
+      html += `<pre class="mt-3">${reportJudul}${reportBody}</pre>`;
       container.innerHTML = html;
     })
     .catch(err => {
-    hideLoading();
+      hideLoading();
       console.error('Gagal muat:', err);
       document.getElementById('dashboardContent').innerHTML =
         '<p class="text-danger text-center">Gagal memuat data.</p>';
     });
 }
-
-
 function getBulanNamaIndonesia() {
   const bulan = [
     "JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI",
@@ -641,32 +672,27 @@ function renderKpiB2c() {
     </div>
   `;
 }
-function cekStatusKpi(indikator, real, target) {
-  if (indikator === "Q Gangguan (All Teknis)" || indikator === "Unspec Non Warranty") {
-    return real < target ? "✅" : "❌";
-  } else {
-    return real >= target ? "✅" : "❌";
-  }
-}
+
+// Fungsi helper generate baris tabel dari data di perbandingan
 function generateTableRows(data) {
   return data.map(item => {
-    const indikator = item.INDIKATOR || "";
     const target = parseFloat(item.TARGET) || 0;
     const real = parseFloat(item.REAL) || 0;
-    const ach = target !== 0 ? ((real / target) * 100).toFixed(2) : "0";
-    const status = cekStatusKpi(indikator, real, target);
+    const ach = target > 0 ? (real / target) * 100 : 0;
+    let status = "✅";
+    if (ach < 100) status = "❌";
 
-    return `
-      <tr class="text-center">
-        <td>${indikator}</td>
-        <td>${target}</td>
-        <td>${real}</td>
-        <td>${ach} %</td>
-        <td>${status}</td>
-      </tr>
-    `;
+    return `<tr>
+      <td>${item.INDIKATOR || ""}</td>
+      <td class="text-end">${target.toFixed(2)}</td>
+      <td class="text-end">${real.toFixed(2)}</td>
+      <td class="text-end">${ach.toFixed(2)}%</td>
+      <td class="text-center">${status}</td>
+    </tr>`;
   }).join("");
 }
+
+// Fungsi render perbandingan tabel sesuai request
 function renderPerbandinganTables(data) {
   const witelData = { BANTEN: [], TANGERANG: [] };
   data.forEach(item => {
