@@ -641,27 +641,32 @@ function renderKpiB2c() {
     </div>
   `;
 }
-
-// Fungsi helper generate baris tabel dari data di perbandingan
+function cekStatusKpi(indikator, real, target) {
+  if (indikator === "Q Gangguan (All Teknis)" || indikator === "Unspec Non Warranty") {
+    return real < target ? "✅" : "❌";
+  } else {
+    return real >= target ? "✅" : "❌";
+  }
+}
 function generateTableRows(data) {
   return data.map(item => {
+    const indikator = item.INDIKATOR || "";
     const target = parseFloat(item.TARGET) || 0;
     const real = parseFloat(item.REAL) || 0;
-    const ach = target > 0 ? (real / target) * 100 : 0;
-    let status = "✅";
-    if (ach < 100) status = "❌";
+    const ach = target !== 0 ? ((real / target) * 100).toFixed(2) : "0";
+    const status = cekStatusKpi(indikator, real, target);
 
-    return `<tr>
-      <td>${item.INDIKATOR || ""}</td>
-      <td class="text-end">${target.toFixed(2)}</td>
-      <td class="text-end">${real.toFixed(2)}</td>
-      <td class="text-end">${ach.toFixed(2)}%</td>
-      <td class="text-center">${status}</td>
-    </tr>`;
+    return `
+      <tr class="text-center">
+        <td>${indikator}</td>
+        <td>${target}</td>
+        <td>${real}</td>
+        <td>${ach} %</td>
+        <td>${status}</td>
+      </tr>
+    `;
   }).join("");
 }
-
-// Fungsi render perbandingan tabel sesuai request
 function renderPerbandinganTables(data) {
   const witelData = { BANTEN: [], TANGERANG: [] };
   data.forEach(item => {
