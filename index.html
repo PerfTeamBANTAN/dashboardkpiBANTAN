@@ -603,6 +603,8 @@ function loadKpiB2c() {
       console.error("Error loadKpiB2c:", err);
     });
 }
+
+// Fungsi render utama KPI B2C (menggunakan indikator list dan logika pewarnaan)
 function renderKpiB2c() {
   const container = document.getElementById("kpiB2cContent");
   const data = window.kpiB2cData || [];
@@ -634,6 +636,7 @@ function renderKpiB2c() {
     "Rasio INUSE to INSTOCK - Dropcore Refurbish",
   ];
 
+  // Ambil dan render tiap indikator dengan color code sesuai kondisi target vs real
   const cards = indikatorList.map(indikator => {
     let target = 0, realTangerang = 0, realBanten = 0;
 
@@ -644,25 +647,12 @@ function renderKpiB2c() {
     realBanten = parseFloat(ban?.REAL || 0);
 
     let warna = "bg-green";
-    const indikatorKhusus = ["Q GANGGUAN (ALL TEKNIS)", "UNSPEC NON WARRANTY"];
-
-    if (indikatorKhusus.includes(indikator.toUpperCase())) {
-      // Logika khusus: REAL < TARGET = ✅
-      const bantenOK = realBanten < target;
-      const tangerangOK = realTangerang < target;
-
-      if (!bantenOK && !tangerangOK) warna = "bg-red";
-      else if (bantenOK && tangerangOK) warna = "bg-green";
-      else warna = "bg-yellow";
-    } else {
-      // Logika umum: REAL >= TARGET = ✅
-      const bantenOK = realBanten >= target;
-      const tangerangOK = realTangerang >= target;
-
-      if (!bantenOK && !tangerangOK) warna = "bg-red";
-      else if (bantenOK && tangerangOK) warna = "bg-green";
-      else warna = "bg-yellow";
-    }
+    if (realBanten < target && realTangerang < target) warna = "bg-red";
+    else if ((realBanten < target && realTangerang >= target) || (realTangerang < target && realBanten >= target)) warna = "bg-yellow";
+    else if (
+      (Math.abs(realBanten - target) / (target || 1) <= 0.03 && realBanten < target) ||
+      (Math.abs(realTangerang - target) / (target || 1) <= 0.03 && realTangerang < target)
+    ) warna = "bg-orange";
 
     return `
       <div class="col">
@@ -673,8 +663,8 @@ function renderKpiB2c() {
           <div class="card-body text-center p-2 ${warna}">
             <p style="font-size: 0.75rem;">
               <strong>Target:</strong> ${target.toFixed(2)}%<br>
-              <span style="color: ${realBanten >= target ? 'black' : 'red'};"><strong>Banten:</strong> ${realBanten.toFixed(2)}%</span><br>
-              <span style="color: ${realTangerang >= target ? 'black' : 'red'};"><strong>Tangerang:</strong> ${realTangerang.toFixed(2)}%</span>
+              <span style="color: ${realBanten < target ? 'red' : 'black'};"><strong>Banten:</strong> ${realBanten.toFixed(2)}%</span><br>
+              <span style="color: ${realTangerang < target ? 'red' : 'black'};"><strong>Tangerang:</strong> ${realTangerang.toFixed(2)}%</span>
             </p>
           </div>
         </div>
@@ -688,6 +678,8 @@ function renderKpiB2c() {
     </div>
   `;
 }
+
+// Fungsi helper generate baris tabel dari data di perbandingan
 function generateTableRows(data) {
   return data.map(item => {
     const indikator = (item.INDIKATOR || "").trim().toUpperCase();
@@ -923,4 +915,4 @@ function loadServiceAvailability() {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
-</html>
+</html>	
