@@ -647,9 +647,25 @@ function renderKpiB2c() {
     realBanten = parseFloat(ban?.REAL || 0);
 
     let warna = "bg-green";
-    if (realBanten < target && realTangerang < target) warna = "bg-red";
-    else if ((realBanten < target && realTangerang >= target) || (realTangerang < target && realBanten >= target)) warna = "bg-yellow";
-    else if (
+const indikatorKhusus = ["Q GANGGUAN (ALL TEKNIS)", "UNSPEC NON WARRANTY"];
+
+if (indikatorKhusus.includes(indikator.toUpperCase())) {
+  // Logika khusus: REAL < TARGET = ✅
+  const bantenOK = realBanten < target;
+  const tangerangOK = realTangerang < target;
+
+  if (!bantenOK && !tangerangOK) warna = "bg-red";
+  else if (bantenOK && tangerangOK) warna = "bg-green";
+  else warna = "bg-yellow";
+} else {
+  // Logika umum: REAL >= TARGET = ✅
+  const bantenOK = realBanten >= target;
+  const tangerangOK = realTangerang >= target;
+
+  if (!bantenOK && !tangerangOK) warna = "bg-red";
+  else if (bantenOK && tangerangOK) warna = "bg-green";
+  else warna = "bg-yellow";
+}
       (Math.abs(realBanten - target) / (target || 1) <= 0.03 && realBanten < target) ||
       (Math.abs(realTangerang - target) / (target || 1) <= 0.03 && realTangerang < target)
     ) warna = "bg-orange";
