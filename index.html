@@ -544,18 +544,32 @@ function generateTableRows(data) {
   return data
     .filter(item => item.INDIKATOR && item.TARGET && item.REAL && item["ACH %"] != null)
     .map(item => {
+      const indikator = (item.INDIKATOR || "").trim().toUpperCase();
+      const target = parseFloat(item.TARGET) || 0;
+      const real = parseFloat(item.REAL) || 0;
       const ach = parseFloat(item["ACH %"]) || 0;
       const bobot = parseFloat(item.BOBOT) || 0;
-      const status = ach === bobot ? '✅' : '❌';
+
+      // Daftar indikator khusus
+      const indikatorKhusus = ["Q GANGGUAN (ALL TEKNIS)", "UNSPEC NON WARRANTY"];
+      let status = "✅";
+
+      if (indikatorKhusus.includes(indikator)) {
+        status = real < target ? "✅" : "❌";
+      } else {
+        status = ach === bobot ? "✅" : "❌";
+      }
+
       return `<tr>
         <td>${item.INDIKATOR}</td>
-        <td>${item.TARGET}</td>
-        <td>${item.REAL}</td>
-        <td>${ach.toFixed(2)}</td>
+        <td class="text-end">${target.toFixed(2)}</td>
+        <td class="text-end">${real.toFixed(2)}</td>
+        <td class="text-end">${ach.toFixed(2)}%</td>
         <td class="text-center">${status}</td>
       </tr>`;
     }).join("");
 }
+
 function loadKpiB2c() {
   showLoading();
 
@@ -679,35 +693,6 @@ function renderKpiB2c() {
   `;
 }
 
-function generateTableRows(data) {
-  return data.map(item => {
-    const indikator = (item.INDIKATOR || "").trim().toUpperCase();
-    const target = parseFloat(item.TARGET) || 0;
-    const real = parseFloat(item.REAL) || 0;
-    const ach = target > 0 ? (real / target) * 100 : 0;
-
-    let status = "✅";
-
-    // Daftar indikator khusus yang menggunakan logika "REAL < TARGET = ✅"
-    const indikatorKhusus = ["Q GANGGUAN (ALL TEKNIS)", "UNSPEC NON WARRANTY"];
-
-    if (indikatorKhusus.includes(indikator)) {
-      status = real < target ? "✅" : "❌";
-    } else {
-      status = ach < 100 ? "❌" : "✅";
-    }
-
-    return `<tr>
-      <td>${item.INDIKATOR || ""}</td>
-      <td class="text-end">${target.toFixed(2)}</td>
-      <td class="text-end">${real.toFixed(2)}</td>
-      <td class="text-end">${ach.toFixed(2)}%</td>
-      <td class="text-center">${status}</td>
-    </tr>`;
-  }).join("");
-}
-
-// Fungsi render perbandingan tabel sesuai request
 function renderPerbandinganTables(data) {
   const witelData = { BANTEN: [], TANGERANG: [] };
   data.forEach(item => {
