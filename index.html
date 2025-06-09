@@ -146,8 +146,7 @@
 
   <script>
   const scriptURL = 'https://script.google.com/macros/s/AKfycbwq85CIdDt06BPp4CayvtOwsjNcTuIAzzsfljN4gEa1m7PA74KbBC9RMmMk-ifltgf0/exec';
-	const uploadUrl = 'https://script.google.com/macros/s/AKfycbwq85CIdDt06BPp4CayvtOwsjNcTuIAzzsfljN4gEa1m7PA74KbBC9RMmMk-ifltgf0/exec';
-
+	
 	function showNotAvailable() {
   showLoading();
   setTimeout(() => {
@@ -185,6 +184,11 @@ function loadData(kategori) {
     loadServiceAvailability();
     return;
   }
+  if (kategori.toLowerCase().includes('summary tiket b2c')) {
+    loadServiceAvailability();
+    return;
+  }
+
 
   fetch(`${scriptURL}?kategori=${encodeURIComponent(kategori)}`)
     .then(response => {
@@ -918,83 +922,293 @@ function loadServiceAvailability() {
 
 function loadSummaryTiket() {
   showLoading();
-  setTimeout(() => {
-    hideLoading();
-    document.getElementById('headerSection').style.display = 'none';
-    document.getElementById('dashboardContent').innerHTML = `
-      <div class="container">
-        <h5 class="mb-3">📤 Upload File Excel TIKET B2C</h5>
-        <form id="uploadForm">
-          <input class="form-control mb-2" type="file" id="excelFile" accept=".xlsx" required>
-          <button type="submit" class="btn btn-primary">Upload ke Google Sheet</button>
-        </form>
-        <div id="pivotResult" class="mt-5"></div>
-      </div>
-    `;
-
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const file = document.getElementById('excelFile').files[0];
-      if (!file) return alert("Pilih file Excel terlebih dahulu.");
-
-      const reader = new FileReader();
-      reader.onload = async function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-        // Upload ke Google Sheet
-        const res = await fetch(uploadUrl, {
-          method: 'POST',
-          body: JSON.stringify({ rows: jsonData }),
-          headers: { 'Content-Type': 'application/json' }
-        });
-        const result = await res.json();
-        if (result.success) {
-          alert("✅ Data berhasil diupload!");
-          renderPivotTable(jsonData);
-        } else {
-          alert("❌ Gagal upload: " + result.message);
-        }
-      };
-      reader.readAsArrayBuffer(file);
+  document.getElementById('headerSection').style.display = 'none'; 
+  fetch("https://script.google.com/macros/s/AKfycbwq85CIdDt06BPp4CayvtOwsjNcTuIAzzsfljN4gEa1m7PA74KbBC9RMmMk-ifltgf0/exec?kategori=summary tiket b2c")
+    .then(res => res.json())
+    .then(data => {
+      hideLoading();
+      renderPivotSummary(data);
+    })
+    .catch(err => {
+      hideLoading();
+      alert("❌ Gagal ambil data: " + err.message);
     });
-  }, 600);
 }
 
-function renderPivotTable(data) {
-  const headers = data[0];
-  const rows = data.slice(1).filter(row => row.length > 0);
-  const container = document.getElementById("pivotResult");
+function renderPivotSummary(data) {
+  const container = document.getElementById("dashboardContent");
+  const mainHeaderStyle = 'background-color:#000000;color:#FFFFFF;text-align:center;';
+  const ttrHeaderStyles = [
+    'background-color:#c6efce;color:#006100;',
+    'background-color:#c6efce;color:#006100;',
+    'background-color:#c6efce;color:#006100;',
+    'background-color:#ffc7ce;color:#9c0006;',
+  ];
+  const ttrMainHeaderWithBorder = 'background-color:#000000;color:#FFFFFF;border:2px solid red;text-align:center;';
 
-  const tangerang = rows.filter(r => (r[0] || '').toString().toUpperCase().includes("TANGERANG"));
-  const banten = rows.filter(r => (r[0] || '').toString().toUpperCase().includes("BANTEN"));
+  let htmlTangerang = `
+    <h5 class='mb-3'>📊 Summary KPI TIKET B2C - WITEL TANGERANG (Full SLA Breakdown)</h5>
+    <div class='table-responsive'>
+    <table class='table table-bordered table-sm text-center align-middle'>
+      <thead>
+        <tr style="${mainHeaderStyle}">
+          <th rowspan="2">STO</th>
+          <th rowspan="2">Q GANGGUAN</th>
+          <th rowspan="2">Q HVC</th>
+          <th rowspan="2">ASGAR ALL</th>
+          <th rowspan="2">ASGAR HVC</th>
+          <th colspan="4" style="${ttrMainHeaderWithBorder}">TTR 3 JAM HVC</th>
+          <th colspan="4" style="${ttrMainHeaderWithBorder}">TTR 6 JAM PLATINUM</th>
+          <th colspan="4" style="${ttrMainHeaderWithBorder}">TTR 3 JAM MANJA</th>
+          <th colspan="4" style="${ttrMainHeaderWithBorder}">TTR 12 JAM GOLD</th>
+          <th colspan="4" style="${ttrMainHeaderWithBorder}">TTR 36 JAM</th>
+        </tr>
+        <tr>
+          <th style="${ttrHeaderStyles[0]}"><1 JAM</th>
+          <th style="${ttrHeaderStyles[1]}"><2 JAM</th>
+          <th style="${ttrHeaderStyles[2]}"><3 JAM</th>
+          <th style="${ttrHeaderStyles[3]}">>3 JAM</th>
 
-  const generateTable = (title, rows) => {
-    let html = `<h6 class="mt-4">${title}</h6><div class="table-responsive"><table class="table table-bordered text-center table-sm"><thead class="table-dark"><tr>`;
-    html += headers.map(h => `<th>${h}</th>`).join('');
-    html += '</tr></thead><tbody>';
-    rows.forEach(row => {
-      html += '<tr>' + row.map((cell, idx) => {
-        let val = cell ?? '';
-        let style = '';
-        if (typeof val === 'number') {
-          if (val <= 1) style = 'background-color:#d4edda;';
-          else if (val <= 3) style = 'background-color:#fff3cd;';
-          else style = 'background-color:#f8d7da;';
-        }
-        return `<td style="${style}">${val}</td>`;
-      }).join('') + '</tr>';
-    });
-    html += '</tbody></table></div>';
-    return html;
+          <th style="${ttrHeaderStyles[0]}"><1 JAM</th>
+          <th style="${ttrHeaderStyles[1]}"><3 JAM</th>
+          <th style="${ttrHeaderStyles[2]}"><6 JAM</th>
+          <th style="${ttrHeaderStyles[3]}">>6 JAM</th>
+
+          <th style="${ttrHeaderStyles[0]}"><1 JAM</th>
+          <th style="${ttrHeaderStyles[1]}"><2 JAM</th>
+          <th style="${ttrHeaderStyles[2]}"><3 JAM</th>
+          <th style="${ttrHeaderStyles[3]}">>3 JAM</th>
+
+          <th style="${ttrHeaderStyles[0]}"><4 JAM</th>
+          <th style="${ttrHeaderStyles[1]}"><8 JAM</th>
+          <th style="${ttrHeaderStyles[2]}"><12 JAM</th>
+          <th style="${ttrHeaderStyles[3]}">>12 JAM</th>
+
+          <th style="${ttrHeaderStyles[0]}"><12 JAM</th>
+          <th style="${ttrHeaderStyles[1]}"><24 JAM</th>
+          <th style="${ttrHeaderStyles[2]}"><36 JAM</th>
+          <th style="${ttrHeaderStyles[3]}">>36 JAM</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  let htmlBanten = `
+    <h5 class='mb-3'>📊 Summary KPI TIKET B2C - WITEL BANTEN (Full SLA Breakdown)</h5>
+    <div class='table-responsive'>
+    <table class='table table-bordered table-sm text-center align-middle'>
+      <thead>
+        <tr style="${mainHeaderStyle}">
+          <th rowspan="2">STO</th>
+          <th rowspan="2">Q GANGGUAN</th>
+          <th rowspan="2">Q HVC</th>
+          <th rowspan="2">ASGAR ALL</th>
+          <th rowspan="2">ASGAR HVC</th>
+          <th colspan="4" style="${ttrMainHeaderWithBorder}">TTR 3 JAM HVC</th>
+          <th colspan="4" style="${ttrMainHeaderWithBorder}">TTR 6 JAM PLATINUM</th>
+          <th colspan="4" style="${ttrMainHeaderWithBorder}">TTR 3 JAM MANJA</th>
+          <th colspan="4" style="${ttrMainHeaderWithBorder}">TTR 12 JAM GOLD</th>
+          <th colspan="4" style="${ttrMainHeaderWithBorder}">TTR 36 JAM</th>
+        </tr>
+        <tr>
+          <th style="${ttrHeaderStyles[0]}"><1 JAM</th>
+          <th style="${ttrHeaderStyles[1]}"><2 JAM</th>
+          <th style="${ttrHeaderStyles[2]}"><3 JAM</th>
+          <th style="${ttrHeaderStyles[3]}">>3 JAM</th>
+
+          <th style="${ttrHeaderStyles[0]}"><1 JAM</th>
+          <th style="${ttrHeaderStyles[1]}"><3 JAM</th>
+          <th style="${ttrHeaderStyles[2]}"><6 JAM</th>
+          <th style="${ttrHeaderStyles[3]}">>6 JAM</th>
+
+          <th style="${ttrHeaderStyles[0]}"><1 JAM</th>
+          <th style="${ttrHeaderStyles[1]}"><2 JAM</th>
+          <th style="${ttrHeaderStyles[2]}"><3 JAM</th>
+          <th style="${ttrHeaderStyles[3]}">>3 JAM</th>
+
+          <th style="${ttrHeaderStyles[0]}"><4 JAM</th>
+          <th style="${ttrHeaderStyles[1]}"><8 JAM</th>
+          <th style="${ttrHeaderStyles[2]}"><12 JAM</th>
+          <th style="${ttrHeaderStyles[3]}">>12 JAM</th>
+
+          <th style="${ttrHeaderStyles[0]}"><12 JAM</th>
+          <th style="${ttrHeaderStyles[1]}"><24 JAM</th>
+          <th style="${ttrHeaderStyles[2]}"><36 JAM</th>
+          <th style="${ttrHeaderStyles[3]}">>36 JAM</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  const renderCellWithColor = (value) => {
+    if (typeof value === 'number' && value > 0) {
+      return `<td style="background-color:#ffc7ce;color:#9c0006;font-weight:bold;">${value}</td>`;
+    } else {
+      return `<td>${value ?? 0}</td>`;
+    }
   };
 
-  container.innerHTML = generateTable("📍 WITEL TANGERANG", tangerang) + generateTable("📍 WITEL BANTEN", banten);
+  data.forEach(row => {
+    const d = row.ttr_d_vvip || [0, 0, 0, 0];
+    const p = row.ttr_platinum || [0, 0, 0, 0];
+    const m = row.ttr_manja || [0, 0, 0, 0];
+    const g = row.ttr_gold || [0, 0, 0, 0];
+    const s = row.ttr_36jam || [0, 0, 0, 0];
+
+    const rowHtml = `
+      <tr>
+        <td>${row.sto}</td>
+        <td>${row.q_all ?? 0}</td>
+        <td>${row.q_hvc ?? 0}</td>
+        <td>${row.asgar_all ?? 0}</td>
+        <td>${row.asgar_hvc ?? 0}</td>
+
+        ${d.map(renderCellWithColor).join('')}
+        ${p.map(renderCellWithColor).join('')}
+        ${m.map(renderCellWithColor).join('')}
+        ${g.map(renderCellWithColor).join('')}
+        ${s.map(renderCellWithColor).join('')}
+      </tr>
+    `;
+
+    if (row.witel && row.witel.toUpperCase() === 'TANGERANG') {
+      htmlTangerang += rowHtml;
+    } else if (row.witel && row.witel.toUpperCase() === 'BANTEN') {
+      htmlBanten += rowHtml;
+    }
+  });
+
+  htmlTangerang += `</tbody></table></div>`;
+  htmlBanten += `</tbody></table></div>`;
+
+  container.innerHTML = htmlTangerang + htmlBanten;
 }
 
+function showDetail(witel, sto, slaType, rangeIndex) {
+  const url = "https://script.google.com/macros/s/AKfycbwq85CIdDt06BPp4CayvtOwsjNcTuIAzzsfljN4gEa1m7PA74KbBC9RMmMk-ifltgf0/exec?kategori=tiket b2c";
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      const headers = data[0];
+      const rows = data.slice(1);
+      const result = [];
+
+      const idxIncident = 0;
+      const idxSummary = 2;
+      const idxWorkzone = 9;
+      const idxStatus = 6;
+      const idxCustomerType = 24;
+      const idxSymptom = 4;
+      const idxReported = 3;
+      const idxBooking = 17;
+      const idxWitel = 8;
+      const idxGaul = 80;
+      const idxHvc = 81;
+      const idxManja = 96;
+
+      const now = new Date();
+
+      rows.forEach(row => {
+        const rwitel = (row[idxWitel] || "").toString().toUpperCase();
+        const rsto = (row[idxWorkzone] || "").toString().toUpperCase();
+        const customerType = (row[idxCustomerType] || "").toString().toUpperCase();
+        const hvc = (row[idxHvc] || "").toString().toUpperCase();
+        const manja = (row[idxManja] || "").toString().toUpperCase();
+        const reported = new Date(row[idxReported]);
+        const booking = new Date(row[idxBooking]);
+
+        if (rwitel !== witel || rsto !== sto) return;
+
+        const diff = Math.floor((now - (slaType === 'MANJA' ? booking : reported)) / 60000);
+        let match = false;
+
+        if (slaType === "TTR_3_HVC" && ["DIAMOND", "VVIP"].includes(customerType)) {
+          if ((rangeIndex === 0 && diff < 60) ||
+              (rangeIndex === 1 && diff >= 60 && diff < 120) ||
+              (rangeIndex === 2 && diff >= 120 && diff < 180) ||
+              (rangeIndex === 3 && diff >= 180)) {
+            match = true;
+          }
+        }
+
+        if (slaType === "TTR_6_PLATINUM" && customerType === "PLATINUM") {
+          if ((rangeIndex === 0 && diff < 60) ||
+              (rangeIndex === 1 && diff >= 60 && diff < 180) ||
+              (rangeIndex === 2 && diff >= 180 && diff < 360) ||
+              (rangeIndex === 3 && diff >= 360)) {
+            match = true;
+          }
+        }
+
+        if (slaType === "TTR_3_MANJA" && manja === "Y") {
+          if ((rangeIndex === 0 && diff < 60) ||
+              (rangeIndex === 1 && diff >= 60 && diff < 120) ||
+              (rangeIndex === 2 && diff >= 120 && diff < 180) ||
+              (rangeIndex === 3 && diff >= 180)) {
+            match = true;
+          }
+        }
+
+        if (slaType === "TTR_12_GOLD" && customerType === "GOLD") {
+          if ((rangeIndex === 0 && diff < 240) ||
+              (rangeIndex === 1 && diff >= 240 && diff < 480) ||
+              (rangeIndex === 2 && diff >= 480 && diff < 720) ||
+              (rangeIndex === 3 && diff >= 720)) {
+            match = true;
+          }
+        }
+
+        if (slaType === "TTR_36" && true) {
+          if ((rangeIndex === 0 && diff < 720) ||
+              (rangeIndex === 1 && diff >= 720 && diff < 1440) ||
+              (rangeIndex === 2 && diff >= 1440 && diff < 2160) ||
+              (rangeIndex === 3 && diff >= 2160)) {
+            match = true;
+          }
+        }
+
+        if (match) {
+          result.push([
+            row[idxIncident], row[idxSummary], row[idxWorkzone],
+            row[idxStatus], row[idxCustomerType], row[idxSymptom]
+          ]);
+        }
+      });
+
+      // Tampilkan hasil
+      let html = `<h5>Detail ${slaType.replaceAll('_', ' ')} (${witel} - ${sto})</h5>`;
+      if (result.length === 0) {
+        html += `<div class="alert alert-warning">Data tidak ditemukan.</div>`;
+      } else {
+        html += `<div class="table-responsive"><table class="table table-bordered table-sm text-center">
+          <thead class="table-secondary"><tr>
+          <th>INCIDENT</th><th>SUMMARY</th><th>WORKZONE</th><th>STATUS</th><th>CUSTOMER TYPE</th><th>SYMPTOM</th>
+          </tr></thead><tbody>`;
+        result.forEach(r => {
+          html += `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`;
+        });
+        html += `</tbody></table></div>`;
+      }
+
+      // Masukkan ke modal atau popup
+      const modal = document.createElement('div');
+      modal.className = "modal fade";
+      modal.innerHTML = `
+        <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+          <div class="modal-header"><h5 class="modal-title">Detail TTR</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">${html}</div>
+        </div></div>
+      `;
+      document.body.appendChild(modal);
+      const bsModal = new bootstrap.Modal(modal);
+      bsModal.show();
+
+      modal.addEventListener('hidden.bs.modal', () => modal.remove());
+    });
+}
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
