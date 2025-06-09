@@ -5,8 +5,7 @@ function doGet(e) {
   if (kategori === 'racing mitra') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('RACING');
     const values = sheet.getDataRange().getValues();
-    data = values.slice(1, 13);
-    data = data.map(row => ({
+    data = values.slice(1, 13).map(row => ({
       nama: row[0],
       sektor: row[1],
       gms: row[2],
@@ -23,11 +22,11 @@ function doGet(e) {
       realisasi: row[13],
       rank: row[14]
     }));
+
   } else if (kategori === 'racing hsa') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('RACING');
     const values = sheet.getDataRange().getValues();
-    const sliced = values.slice(14, 23);
-    data = sliced.map(row => ({
+    data = values.slice(14, 23).map(row => ({
       nama: row[0],
       sektor: row[1],
       gms: row[2],
@@ -44,38 +43,34 @@ function doGet(e) {
       realisasi: row[13],
       rank: row[14]
     }));
+
   } else if (kategori === '12 pi laten') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('12 PI LATEN');
     const values = sheet.getDataRange().getValues();
     const headers = values[0];
     const body = values.slice(1);
-
     data = body.map(row => {
       let obj = {};
-      headers.forEach((h, i) => {
-        obj[h] = row[i];
-      });
+      headers.forEach((h, i) => obj[h] = row[i]);
       return obj;
     });
+
   } else if (kategori === 'dashboard ioan b2c') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('KPI B2C');
     const values = sheet.getDataRange().getValues();
     const headers = values[0];
     const body = values.slice(1);
-
     data = body.map(row => {
       let obj = {};
-      headers.forEach((h, i) => {
-        obj[h] = row[i];
-      });
+      headers.forEach((h, i) => obj[h] = row[i]);
       return obj;
     });
+
   } else if (kategori === 'racing ioan mitra') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('IOAN MITRA');
     const values = sheet.getDataRange().getValues();
-
     const headers = values[0];
-    const body = values.slice(1, 30);   
+    const body = values.slice(1, 30);
     const rankingRow = values[30] || [];
 
     const finalData = [...body];
@@ -87,41 +82,71 @@ function doGet(e) {
     return ContentService
       .createTextOutput(JSON.stringify(finalData))
       .setMimeType(ContentService.MimeType.JSON);
-    
+
   } else if (kategori === 'service availability') {
-  const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('SERVICE AVAILABILITY');
-  const values = sheet.getDataRange().getValues();
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('SERVICE AVAILABILITY');
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0];
+    const bulanSekarang = Utilities.formatDate(new Date(), "GMT+7", "MMM ''yy");
+    const indexBulan = headers.indexOf(bulanSekarang);
+    const indexAVG = headers.indexOf("AVG");
+    const targetRow = values.find(row => (row[0] || "").toString().trim().toUpperCase() === "TARGET");
 
-  const headers = values[0];
-  const bulanSekarang = Utilities.formatDate(new Date(), "GMT+7", "MMM ''yy");
-  const indexBulan = headers.indexOf(bulanSekarang);
-  const indexAVG = headers.indexOf("AVG");
+    const summary = [];
+    const tabel = [headers];
 
-  const targetRow = values.find(row => (row[0] || "").toString().trim().toUpperCase() === "TARGET");
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      if ((row[0] || "").toString().trim().toUpperCase() === "TARGET") continue;
 
-  const summary = [];
-  const tabel = [headers];
+      summary.push({
+        wilayah: (row[0] || "").toString().trim(),
+        bulan: bulanSekarang,
+        nilai: indexBulan >= 0 ? parseFloat(row[indexBulan]) : null,
+        avg: indexAVG >= 0 ? parseFloat(row[indexAVG]) : null,
+        target: indexBulan >= 0 && targetRow ? parseFloat(targetRow[indexBulan]) : null
+      });
 
-  for (let i = 1; i < values.length; i++) {
-    const row = values[i];
-    if ((row[0] || "").toString().trim().toUpperCase() === "TARGET") continue; // skip target row
+      tabel.push(row);
+    }
 
-    summary.push({
-      wilayah: (row[0] || "").toString().trim(),
-      bulan: bulanSekarang,
-      nilai: indexBulan >= 0 ? parseFloat(row[indexBulan]) : null,
-      avg: indexAVG >= 0 ? parseFloat(row[indexAVG]) : null,
-      target: indexBulan >= 0 && targetRow ? parseFloat(targetRow[indexBulan]) : null
-    });
-
-    tabel.push(row);
+    return ContentService
+      .createTextOutput(JSON.stringify({ summary, tabel }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 
-  return ContentService.createTextOutput(JSON.stringify({ summary, tabel }))
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+function doPost(e) {
+  const sheet = SpreadsheetApp.openById("1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY").getSheetByName("TIKET B2C");
 
+  if (!e.postData || !e.postData.contents) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, message: "No data received" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    const rows = payload.rows;
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Invalid rows" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    sheet.clearContents(); // Kosongkan isi lama
+    sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, message: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
