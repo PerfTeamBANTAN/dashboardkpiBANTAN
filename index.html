@@ -636,7 +636,6 @@ function renderKpiB2c() {
     "Rasio INUSE to INSTOCK - Dropcore Refurbish",
   ];
 
-  // Ambil dan render tiap indikator dengan color code sesuai kondisi target vs real
   const cards = indikatorList.map(indikator => {
     let target = 0, realTangerang = 0, realBanten = 0;
 
@@ -646,13 +645,18 @@ function renderKpiB2c() {
     realTangerang = parseFloat(tgr?.REAL || 0);
     realBanten = parseFloat(ban?.REAL || 0);
 
+    const indikatorKhusus = ["Q GANGGUAN (ALL TEKNIS)", "UNSPEC NON WARRANTY"];
+    const isKhusus = indikatorKhusus.includes(indikator.toUpperCase());
+
+    // Penentuan status ✅ atau ❌ berdasarkan logika indikator
+    const bantenStatus = isKhusus ? realBanten < target : realBanten >= target;
+    const tangerangStatus = isKhusus ? realTangerang < target : realTangerang >= target;
+
+    // Penentuan warna card
     let warna = "bg-green";
-    if (realBanten < target && realTangerang < target) warna = "bg-red";
-    else if ((realBanten < target && realTangerang >= target) || (realTangerang < target && realBanten >= target)) warna = "bg-yellow";
-    else if (
-      (Math.abs(realBanten - target) / (target || 1) <= 0.03 && realBanten < target) ||
-      (Math.abs(realTangerang - target) / (target || 1) <= 0.03 && realTangerang < target)
-    ) warna = "bg-orange";
+    if (bantenStatus && tangerangStatus) warna = "bg-green";
+    else if (!bantenStatus && !tangerangStatus) warna = "bg-red";
+    else warna = "bg-yellow";
 
     return `
       <div class="col">
@@ -663,8 +667,8 @@ function renderKpiB2c() {
           <div class="card-body text-center p-2 ${warna}">
             <p style="font-size: 0.75rem;">
               <strong>Target:</strong> ${target.toFixed(2)}%<br>
-              <span style="color: ${realBanten < target ? 'red' : 'black'};"><strong>Banten:</strong> ${realBanten.toFixed(2)}%</span><br>
-              <span style="color: ${realTangerang < target ? 'red' : 'black'};"><strong>Tangerang:</strong> ${realTangerang.toFixed(2)}%</span>
+              <span style="color: ${bantenStatus ? 'black' : 'red'};"><strong>Banten:</strong> ${realBanten.toFixed(2)}%</span><br>
+              <span style="color: ${tangerangStatus ? 'black' : 'red'};"><strong>Tangerang:</strong> ${realTangerang.toFixed(2)}%</span>
             </p>
           </div>
         </div>
