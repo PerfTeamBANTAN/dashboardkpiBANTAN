@@ -449,7 +449,7 @@ function renderPerbandinganTables(data) {
               <tr><th>INDIKATOR</th><th>TARGET</th><th>REAL</th><th>ACH %</th><th>STATUS</th></tr>
             </thead>
             <tbody>
-              ${generateTableRows(witelData.TANGERANG)}
+              ${generateTableRowsPiLaten(witelData.TANGERANG)}
             </tbody>
           </table>
         </div>
@@ -462,7 +462,7 @@ function renderPerbandinganTables(data) {
               <tr><th>INDIKATOR</th><th>TARGET</th><th>REAL</th><th>ACH %</th><th>STATUS</th></tr>
             </thead>
             <tbody>
-              ${generateTableRows(witelData.BANTEN)}
+              ${generateTableRowsPiLaten(witelData.BANTEN)}
             </tbody>
           </table>
         </div>
@@ -540,7 +540,7 @@ function renderTabelGagal(data) {
   gagalDiv.innerHTML = html;
 }
 
-function generateTableRows(data) {
+function generateTableRowsPiLaten(data) {
   return data
     .filter(item => item.INDIKATOR && item.TARGET && item.REAL && item["ACH %"] != null)
     .map(item => {
@@ -682,11 +682,20 @@ function renderKpiB2c() {
 // Fungsi helper generate baris tabel dari data di perbandingan
 function generateTableRows(data) {
   return data.map(item => {
+    const indikator = (item.INDIKATOR || "").trim().toUpperCase();
     const target = parseFloat(item.TARGET) || 0;
     const real = parseFloat(item.REAL) || 0;
     const ach = target > 0 ? (real / target) * 100 : 0;
+
+    // Indikator dengan logika khusus
+    const indikatorKhusus = ["Q GANGGUAN (ALL TEKNIS)", "UNSPEC NON WARRANTY"];
+
     let status = "✅";
-    if (ach < 100) status = "❌";
+    if (indikatorKhusus.includes(indikator)) {
+      status = real < target ? "✅" : "❌";
+    } else {
+      status = ach >= 100 ? "✅" : "❌";
+    }
 
     return `<tr>
       <td>${item.INDIKATOR || ""}</td>
