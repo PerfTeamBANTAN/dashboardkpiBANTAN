@@ -679,14 +679,23 @@ function renderKpiB2c() {
   `;
 }
 
-// Fungsi helper generate baris tabel dari data di perbandingan
 function generateTableRows(data) {
   return data.map(item => {
+    const indikator = (item.INDIKATOR || "").trim().toUpperCase();
     const target = parseFloat(item.TARGET) || 0;
     const real = parseFloat(item.REAL) || 0;
     const ach = target > 0 ? (real / target) * 100 : 0;
+
     let status = "✅";
-    if (ach < 100) status = "❌";
+
+    // Daftar indikator khusus yang menggunakan logika "REAL < TARGET = ✅"
+    const indikatorKhusus = ["Q GANGGUAN (ALL TEKNIS)", "UNSPEC NON WARRANTY"];
+
+    if (indikatorKhusus.includes(indikator)) {
+      status = real < target ? "✅" : "❌";
+    } else {
+      status = ach < 100 ? "❌" : "✅";
+    }
 
     return `<tr>
       <td>${item.INDIKATOR || ""}</td>
