@@ -52,7 +52,7 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav">
           <li class="nav-item">
-            <a class="nav-link" href="#" onclick="showNotAvailable()">Dashboards</a>
+            <a class="nav-link" href="#" onclick="loadPiLaten12()">Dashboards</a>
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="racingDropdown" role="button" data-bs-toggle="dropdown">Racing</a>
@@ -1209,6 +1209,290 @@ function showDetail(witel, sto, slaType, rangeIndex) {
       modal.addEventListener('hidden.bs.modal', () => modal.remove());
     });
 }
+function loadPiLaten12() {
+  showLoading();
+  document.getElementById("headerSection").style.display = "none";
+  const container = document.getElementById("dashboardContent");
+  
+  Promise.all([
+    fetch(`${scriptURL}?kategori=12 pi laten`).then(res => res.json()),
+    fetch(`${scriptURL}?kategori=dashboard ioan b2c`).then(res => res.json())
+  ])
+    .then(([piLatenData, kpiB2cData]) => {
+      hideLoading();
+      const htmlPiLaten = renderPiLatenDashboard(piLatenData);
+      const htmlKpiB2c = renderKpiB2cDashboard(kpiB2cData);
+      container.innerHTML = htmlPiLaten + '<hr class="my-5">' + htmlKpiB2c;
+    })
+    .catch(err => {
+      hideLoading();
+      container.innerHTML = `<p class='text-danger text-center'>Gagal memuat data: ${err.message}</p>`;
+    });
+}
+
+
+function renderPiLatenDashboard(data) {
+  function getStoData(sto) {
+    return data.filter(item =>
+      (item.STO || "").toUpperCase() === sto.toUpperCase() &&
+      item.INDIKATOR !== "TOTAL ACH"
+    );
+  }
+
+  function hitungLulus(stoData) {
+    return stoData.filter(item => parseFloat(item["ACH %"]) === 1).length;
+  }
+
+  function hitungGagal(stoData) {
+    return stoData.filter(item => parseFloat(item["ACH %"]) === 0).length;
+  }
+
+  function getGagalIndikator(stoData) {
+    return stoData.filter(item => parseFloat(item["ACH %"]) === 0).map(item => {
+      const target = parseFloat(item.TARGET) || 0;
+      const h1 = parseFloat(item["REAL H-1"]) || 0;
+      const h2 = parseFloat(item.REAL) || 0;
+      const growth = h2 - h1;
+      let icon = "↔️";
+      if (growth > 0.01) icon = "⬆️";
+      else if (growth < -0.01) icon = "⬇️";
+      return `
+        <tr>
+          <td>${item.INDIKATOR}</td>
+          <td>${target.toFixed(2)}</td>
+          <td>${h1.toFixed(2)}</td>
+          <td class="text-center">${icon}</td>
+          <td>${h2.toFixed(2)}</td>
+        </tr>`;
+    }).join("");
+  }
+
+  function getHsaRanking(type = "best") {
+    const hsaTotal = {};
+    data.forEach(item => {
+      const hsa = item.HSA || "";
+      const ach = parseFloat(item["ACH %"]) || 0;
+      if (!hsaTotal[hsa]) hsaTotal[hsa] = 0;
+      if (item.INDIKATOR === "TOTAL ACH") hsaTotal[hsa] = ach;
+    });
+    const hasil = Object.entries(hsaTotal).map(([hsa, total]) => ({ hsa, total }));
+    return hasil
+      .sort((a, b) => type === "best" ? b.total - a.total : a.total - b.total)
+      .slice(0, 3)
+      .map((item, i) => `
+        <tr>
+          <td>${item.hsa}</td>
+          <td>${item.total.toFixed(2)}</td>
+          <td class="text-center">${type === "best" ? ["🏆", "🥈", "🥉"][i] : "☠️"}</td>
+        </tr>`).join("");
+  }
+
+  function getStoRanking() {
+    const list = data.filter(item => item.INDIKATOR === "TOTAL ACH" && item.STO && item.HSA);
+    return list
+      .sort((a, b) => parseFloat(b["ACH %"]) - parseFloat(a["ACH %"]))
+      .slice(0, 5)
+      .map(item => `
+        <tr>
+          <td>${item.STO}</td>
+          <td>${item.HSA}</td>
+          <td>${parseFloat(item["ACH %"]).toFixed(2)}</td>
+        </tr>`).join("");
+  }
+
+  const tgrData = getStoData("TANGERANG");
+  const banData = getStoData("BANTEN");
+
+  return `
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <h5 class="text-center text-danger">12 PI LATEN - STO TANGERANG</h5>
+        <div class="alert alert-success text-center">LULUS PI LATEN: ${hitungLulus(tgrData)} Indikator</div>
+        <div class="alert alert-danger text-center">KPI NOT ACH: ${hitungGagal(tgrData)}</div>
+        <table class="table table-bordered table-sm">
+          <thead class="table-danger text-center">
+            <tr><th>Indikator</th><th>Target</th><th>H-1</th><th>🔄</th><th>H</th></tr>
+          </thead>
+          <tbody>${getGagalIndikator(tgrData)}</tbody>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <h5 class="text-center text-danger">12 PI LATEN - STO BANTEN</h5>
+        <div class="alert alert-success text-center">LULUS PI LATEN: ${hitungLulus(banData)} Indikator</div>
+        <div class="alert alert-danger text-center">KPI NOT ACH: ${hitungGagal(banData)}</div>
+        <table class="table table-bordered table-sm">
+          <thead class="table-danger text-center">
+            <tr><th>Indikator</th><th>Target</th><th>H-1</th><th>🔄</th><th>H</th></tr>
+          </thead>
+          <tbody>${getGagalIndikator(banData)}</tbody>
+        </table>
+      </div>
+    </div>
+    <h5 class="text-center">Worst Ranking HSA 12 PI LATEN</h5>
+    <table class="table table-sm table-bordered text-center w-50 mx-auto">
+      <thead class="table-dark"><tr><th>HSA</th><th>ACH</th><th>ACH KPI</th></tr></thead>
+      <tbody>${getHsaRanking("worst")}</tbody>
+    </table>
+
+    <h5 class="text-center mt-4">Best Ranking HSA 12 PI LATEN</h5>
+    <table class="table table-sm table-bordered text-center w-50 mx-auto">
+      <thead class="table-dark"><tr><th>HSA</th><th>ACH</th><th>ACH KPI</th></tr></thead>
+      <tbody>${getHsaRanking("best")}</tbody>
+    </table>
+
+    <h5 class="text-center mt-4">Best STO 12 PI LATEN</h5>
+    <table class="table table-sm table-bordered text-center w-75 mx-auto">
+      <thead class="table-dark"><tr><th>STO</th><th>HSA</th><th>ACH KPI</th></tr></thead>
+      <tbody>${getStoRanking()}</tbody>
+    </table>
+  `;
+}
+function renderKpiB2cDashboard(data) {
+  function getStoData(sto) {
+    return data.filter(item =>
+      (item.STO || "").toUpperCase() === sto.toUpperCase() &&
+      item.INDIKATOR !== "TOTAL ACH B2C"
+    );
+  }
+
+  function isExceptionIndikator(nama) {
+    return ["Q Gangguan (All Teknis)", "Unspec Non Warranty"].includes(nama.trim());
+  }
+
+  function hitungLulus(stoData) {
+    return stoData.filter(item => {
+      const real = parseFloat(item.REAL) || 0;
+      const target = parseFloat(item.TARGET) || 0;
+      const indikator = item.INDIKATOR || "";
+      if (isExceptionIndikator(indikator)) {
+        return real < target;
+      } else {
+        return real > target;
+      }
+    }).length;
+  }
+
+  function hitungGagal(stoData) {
+    return stoData.filter(item => {
+      const real = parseFloat(item.REAL) || 0;
+      const target = parseFloat(item.TARGET) || 0;
+      const indikator = item.INDIKATOR || "";
+      if (isExceptionIndikator(indikator)) {
+        return real > target;
+      } else {
+        return real < target;
+      }
+    }).length;
+  }
+
+  function getGagalIndikator(stoData) {
+    return stoData.filter(item => {
+      const real = parseFloat(item.REAL) || 0;
+      const target = parseFloat(item.TARGET) || 0;
+      const indikator = item.INDIKATOR || "";
+      if (isExceptionIndikator(indikator)) {
+        return real > target;
+      } else {
+        return real < target;
+      }
+    }).map(item => {
+      const target = parseFloat(item.TARGET) || 0;
+      const h1 = parseFloat(item["REAL H-1"]) || 0;
+      const h2 = parseFloat(item.REAL) || 0;
+      const growth = h2 - h1;
+      let icon = "↔️";
+      if (growth > 0.01) icon = "⬆️";
+      else if (growth < -0.01) icon = "⬇️";
+      return `
+        <tr>
+          <td>${item.INDIKATOR}</td>
+          <td>${target.toFixed(2)}</td>
+          <td>${h1.toFixed(2)}</td>
+          <td class="text-center">${icon}</td>
+          <td>${h2.toFixed(2)}</td>
+        </tr>`;
+    }).join("");
+  }
+
+  function getHsaRanking(type = "best") {
+    const hsaTotal = {};
+    data.forEach(item => {
+      if (item.INDIKATOR === "TOTAL ACH B2C") {
+        const hsa = item.HSA || "";
+        const real = parseFloat(item.REAL) || 0;
+        hsaTotal[hsa] = real;
+      }
+    });
+    const hasil = Object.entries(hsaTotal).map(([hsa, real]) => ({ hsa, real }));
+    return hasil
+      .sort((a, b) => b.real - a.real)
+      .slice(0, 3)
+      .map((item, i) => `
+        <tr>
+          <td>${item.hsa}</td>
+          <td>${item.real.toFixed(2)}</td>
+          <td class="text-center">${["🏆", "🥈", "🥉"][i]}</td>
+        </tr>`).join("");
+  }
+
+  function getStoRanking() {
+    const list = data.filter(item => item.INDIKATOR === "TOTAL ACH B2C" && item.STO && item.HSA);
+    return list
+      .sort((a, b) => parseFloat(b.REAL) - parseFloat(a.REAL))
+      .slice(0, 5)
+      .map(item => `
+        <tr>
+          <td>${item.STO}</td>
+          <td>${item.HSA}</td>
+          <td>${parseFloat(item.REAL).toFixed(2)}</td>
+        </tr>`).join("");
+  }
+
+  const tgrData = getStoData("TANGERANG");
+  const banData = getStoData("BANTEN");
+
+  return `
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <h5 class="text-center text-primary">KPI IOAN B2C - STO TANGERANG</h5>
+        <div class="alert alert-success text-center">LULUS PI IOAN: ${hitungLulus(tgrData)} Indikator</div>
+        <div class="alert alert-danger text-center">KPI NOT ACH: ${hitungGagal(tgrData)}</div>
+        <table class="table table-bordered table-sm">
+          <thead class="table-primary text-center">
+            <tr><th>Indikator</th><th>Target</th><th>H-1</th><th>🔄</th><th>H</th></tr>
+          </thead>
+          <tbody>${getGagalIndikator(tgrData)}</tbody>
+        </table>
+      </div>
+      <div class="col-md-6">
+        <h5 class="text-center text-primary">KPI IOAN B2C - STO BANTEN</h5>
+        <div class="alert alert-success text-center">LULUS PI IOAN: ${hitungLulus(banData)} Indikator</div>
+        <div class="alert alert-danger text-center">KPI NOT ACH: ${hitungGagal(banData)}</div>
+        <table class="table table-bordered table-sm">
+          <thead class="table-primary text-center">
+            <tr><th>Indikator</th><th>Target</th><th>H-1</th><th>🔄</th><th>H</th></tr>
+          </thead>
+          <tbody>${getGagalIndikator(banData)}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <h5 class="text-center">Worst Ranking HSA KPI IOAN B2C</h5>
+    <table class="table table-sm table-bordered text-center w-50 mx-auto">
+      <thead class="table-dark"><tr><th>HSA</th><th>REAL</th><th>ACH KPI</th></tr></thead>
+      <tbody>${getHsaRanking("best")}</tbody>
+    </table>
+
+    <h5 class="text-center mt-4">Best STO KPI IOAN B2C</h5>
+    <table class="table table-sm table-bordered text-center w-75 mx-auto">
+      <thead class="table-dark"><tr><th>STO</th><th>HSA</th><th>REAL</th></tr></thead>
+      <tbody>${getStoRanking()}</tbody>
+    </table>
+  `;
+}
+
+
+
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
