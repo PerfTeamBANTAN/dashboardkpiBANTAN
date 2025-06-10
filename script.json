@@ -65,7 +65,74 @@ function doGet(e) {
       headers.forEach((h, i) => obj[h] = row[i]);
       return obj;
     });
+    
+   } else if (kategori === 'asgar ioan') {
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('ASGAR IOAN');
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0];
+    const body = values.slice(1);
+    data = body.map(row => {
+      let obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      return obj;
+    });
+  
+  } else if (kategori === 'ttr') {
+    const sheet = SpreadsheetApp
+      .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+      .getSheetByName('TTR'); // pastikan ini nama sheet yang benar
+    const values = sheet.getDataRange().getValues();
 
+    const result = [];
+    let i = 0;
+
+    while (i < values.length) {
+      const row = values[i];
+
+      if (row[0] && row[0].toString().toUpperCase().startsWith("TTR COMP")) {
+        const title = row[0].toString().trim();
+        const headers = values[i + 1];
+        const witelRows = [];
+        const stoRows = [];
+
+        i += 2;
+
+        while (i < values.length && values[i][0] && values[i][0].toString().trim() !== "") {
+          witelRows.push(values[i]);
+          i++;
+        }
+
+        while (i < values.length && (!values[i][0] || values[i][0].toString().trim() === "")) {
+          i++;
+        }
+
+        while (i < values.length && values[i][0] && !values[i][0].toString().toUpperCase().startsWith("TTR COMP")) {
+          stoRows.push(values[i]);
+          i++;
+        }
+
+        result.push({
+          title: title,
+          witel: {
+            headers: headers,
+            rows: witelRows
+          },
+          sto: {
+            headers: headers,
+            rows: stoRows
+          }
+        });
+      } else {
+        i++;
+      }
+    }
+
+    // ✅ FINAL return khusus untuk TTR
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  
   } else if (kategori === 'racing ioan mitra') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('IOAN MITRA');
     const values = sheet.getDataRange().getValues();
@@ -113,6 +180,8 @@ function doGet(e) {
     return ContentService
       .createTextOutput(JSON.stringify({ summary, tabel }))
       .setMimeType(ContentService.MimeType.JSON);
+      
+ 
 
   } else if (kategori === 'tiket b2c') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('TIKET B2C');
