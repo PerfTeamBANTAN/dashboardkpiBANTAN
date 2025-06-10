@@ -1689,92 +1689,133 @@ function renderUnderspecTable(headers, rows) {
   return html;
 }
 function loadScc() {
-    showLoading();
-    document.getElementById("headerSection").style.display = "none";
+  showLoading();
+  document.getElementById("headerSection").style.display = "none";
 
-    fetch(`${scriptURL}?kategori=scc`)
-      .then(res => res.json())
-      .then(data => {
-        hideLoading();
-        const container = document.getElementById("dashboardContent");
+  fetch(`${scriptURL}?kategori=scc`)
+    .then(res => res.json())
+    .then(data => {
+      hideLoading();
+      const container = document.getElementById("dashboardContent");
 
-        let html = `<h4 class="text-center mb-4 fw-bold">📊 SCC COMPLIANCE</h4>`;
+      const wilayahBanten = [
+        "BJO", "BAY", "BJT", "BLJ", "BRS", "CKA", "CKD", "CLG", "CRS", "CSK", "CWN",
+        "GRL", "KMT", "KRS", "LBU", "LWD", "MEN", "MER", "MLP", "PBN", "PDG", "PSU",
+        "RKS", "SAG", "SAM", "SEG", "SKE", "TGR", "TJO", "DATEL CILEGON", "DATEL SERANG", "DATEL LEBAK"
+      ];
 
-        html += `<div class="table-responsive"><table class="table table-bordered table-sm text-center align-middle">
-          <thead>
-  					<tr>
-    					${["TERITORY", "H-1", "", "", "", "H", "", "", "", "GROWTH"]
-      					.map((h, i) => i === 0 || i === 9
-        					? `<th rowspan="2" style="background-color:#000;color:#fff;">${h}</th>`
-        					: i === 1 || i === 5
-        					? `<th colspan="4" style="background-color:#000;color:#fff;">${h}</th>`
-        					: "").join("")}
-  					<tr>
-    					${["NOT COMPLY", "COMPLY", "TOTAL", "AVG 70%", "NOT COMPLY", "COMPLY", "TOTAL", "AVG 70%"]
-      					.map(h => `<th style="background-color:#000;color:#fff;">${h}</th>`).join("")}
-  					</tr>
-					</thead>
-          <tbody>`;
+      const wilayahTangerang = [
+        "CKL", "CLD", "CPA", "CPD", "CUG", "GDS", "KJO", "LGK", "LKG", "MUK", "PDR",
+        "PKU", "PPG", "PSK", "RJG", "RMP", "SPT", "SRH", "SRP", "TAN", "CIPUTAT",
+        "LENGKONG", "PASAR BARU", "TANGERANG", "DATEL CIKUPA"
+      ];
 
-        data.forEach(row => {
-          const territory = (row[0] || "").toString().trim().toUpperCase();
+      let html = `<h4 class="text-center mb-4 fw-bold">📊 SCC COMPLIANCE</h4>`;
 
-          const navyRows = ["BANTEN", "TANGERANG"];
-          const grayRows = [
-            "DATEL CIKUPA", "DATEL CILEGON", "DATEL SERANG", "DATEL LEBAK",
-            "CIPUTAT", "LENGKONG", "PASAR BARU"
-          ];
+      // HEADER TABEL
+      html += `<div class="table-responsive"><table class="table table-bordered table-sm text-center align-middle">
+        <thead>
+          <tr>
+            <th rowspan="2" style="background-color:#000; color:#fff;">TERITORY</th>
+            <th colspan="4" style="background-color:#000; color:#fff;">H-1</th>
+            <th colspan="4" style="background-color:#000; color:#fff;">H</th>
+            <th rowspan="2" style="background-color:#000; color:#fff;">GROWTH</th>
+          </tr>
+          <tr>
+            <th style="background-color:#000; color:#fff;">NOT COMPLY</th>
+            <th style="background-color:#000; color:#fff;">COMPLY</th>
+            <th style="background-color:#000; color:#fff;">TOTAL</th>
+            <th style="background-color:#000; color:#fff;">AVG 70%</th>
+            <th style="background-color:#000; color:#fff;">NOT COMPLY</th>
+            <th style="background-color:#000; color:#fff;">COMPLY</th>
+            <th style="background-color:#000; color:#fff;">TOTAL</th>
+            <th style="background-color:#000; color:#fff;">AVG 70%</th>
+          </tr>
+        </thead>
+        <tbody>`;
 
-          let rowStyle = "";
-          if (navyRows.includes(territory)) {
-            rowStyle = ' style="background-color:#0d6efd; color:white;"';
-          } else if (grayRows.includes(territory)) {
-            rowStyle = ' class="bg-secondary text-white"';
+      const listNotAchievedBanten = [];
+      const listNotAchievedTangerang = [];
+
+      data.forEach(row => {
+        const teritory = (row[0] || "").toString().trim().toUpperCase();
+        const avgH = parseFloat((row[8] || "").toString().replace(",", "."));
+
+        html += `<tr>`;
+        row.forEach((cell, idx) => {
+          let style = "";
+          let value = parseFloat((cell || "").toString().replace(",", "."));
+          let displayValue = cell ?? "-";
+
+          if (!isNaN(value)) {
+            displayValue = value.toFixed(2);
           }
 
-          html += `<tr>`;
+          // Pewarnaan baris khusus
+          if (teritory === "BANTEN" || teritory === "TANGERANG") {
+            style = "background-color:#0d6efd;color:white;";
+          } else if ([
+            "DATEL CIKUPA", "DATEL CILEGON", "DATEL SERANG", "DATEL LEBAK",
+            "CIPUTAT", "LENGKONG", "PASAR BARU"
+          ].includes(teritory)) {
+            style = "background-color:#6c757d;color:white;";
+          }
 
-          row.forEach((cell, idx) => {
-            let cellClass = "text-center";
-            const value = parseFloat((cell || "").toString().replace(",", "."));
-            const isAvgColumn = (idx === 4 || idx === 8);
-            const isColoredRow = navyRows.includes(territory) || grayRows.includes(territory);
+          // Pewarnaan kolom AVG 70% jika < 70 dan bukan baris khusus
+          const isAvgColumn = (idx === 4 || idx === 8);
+          if (!style && isAvgColumn && !isNaN(value) && value < 70) {
+            style = "background-color:#dc3545;color:white;";
+          }
 
-            if (!isColoredRow && isAvgColumn && !isNaN(value) && value < 70) {
-              cellClass += " bg-danger text-white";
-            }
-
-            let displayValue = cell ?? '-';
-            if (!isNaN(value) && typeof value === "number") {
-              displayValue = value.toFixed(2);
-            }
-
-            let style = "";
-
-						if (navyRows.includes(territory)) {
-  						style = 'background-color:#0d6efd;color:white;';
-						} else if (grayRows.includes(territory)) {
-  						style = 'background-color:#6c757d;color:white;';
-						} else if (!isNaN(value) && isAvgColumn && value < 70) {
-  						style = 'background-color:#dc3545;color:white;';
-						}
-
-						html += `<td class="${cellClass}" style="${style}">${displayValue}</td>`;
-          });
-
-          html += `</tr>`;
+          html += `<td class="text-center" style="${style}">${displayValue}</td>`;
         });
+        html += `</tr>`;
 
-        html += `</tbody></table></div>`;
-        container.innerHTML = html;
-      })
-      .catch(err => {
-        hideLoading();
-        console.error("Gagal memuat data SCC:", err);
-        document.getElementById("dashboardContent").innerHTML =
-          '<p class="text-center text-danger">Gagal memuat data SCC.</p>';
+        // Kumpulkan untuk bagian NOT ACHIEVED
+        if (avgH < 70 && !isNaN(avgH)) {
+          if (wilayahBanten.includes(teritory)) {
+            listNotAchievedBanten.push({ teritory, avg: avgH });
+          } else if (wilayahTangerang.includes(teritory)) {
+            listNotAchievedTangerang.push({ teritory, avg: avgH });
+          }
+        }
       });
-  }
+
+      html += `</tbody></table></div>`;
+
+      // Tambahan deskripsi bawah
+      html += `<div class="mt-5">
+        <h5 class="fw-bold text-danger">SCC INET BANTEN – NOT ACHIEVED</h5>
+        <table class="table table-bordered table-sm w-auto">
+          <thead><tr style="background-color:#000;color:#fff;">
+            <th>TERITORY</th><th>AVG 70%</th>
+          </tr></thead><tbody>
+          ${listNotAchievedBanten.map(item => `
+            <tr><td>${item.teritory}</td><td>${item.avg.toFixed(2)}</td></tr>`).join("")}
+          </tbody>
+        </table>
+
+        <h5 class="fw-bold text-danger mt-4">SCC INET TANGERANG – NOT ACHIEVED</h5>
+        <table class="table table-bordered table-sm w-auto">
+          <thead><tr style="background-color:#000;color:#fff;">
+            <th>TERITORY</th><th>AVG 70%</th>
+          </tr></thead><tbody>
+          ${listNotAchievedTangerang.map(item => `
+            <tr><td>${item.teritory}</td><td>${item.avg.toFixed(2)}</td></tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
+
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      hideLoading();
+      console.error("Gagal muat data SCC:", err);
+      document.getElementById("dashboardContent").innerHTML =
+        '<p class="text-center text-danger">Gagal memuat data SCC.</p>';
+    });
+}
+
 
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
