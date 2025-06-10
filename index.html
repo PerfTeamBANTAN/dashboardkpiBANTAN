@@ -76,11 +76,11 @@
               <li><a class="dropdown-item" href="#" onclick="loadServiceAvailability()">Service Availability</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadAsgarIoan()">Assurance Guarantee</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadTtrIoan()">TTR</a></li>
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Underspec</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadUnderspec()">Underspec</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Tangible</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Validasi</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">SQM</a></li>
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">SCC</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadScc()">SCC</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Infracare</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Ext Audit</a></li>
             </ul>
@@ -1626,7 +1626,155 @@ function renderTtrTable(headers, rows) {
   html += `</tbody></table></div>`;
   return html;
 }
+function loadUnderspec() {
+  showLoading();
+  document.getElementById("headerSection").style.display = "none";
 
+  fetch(`${scriptURL}?kategori=underspec`)
+    .then(res => res.json())
+    .then(data => {
+      hideLoading();
+      const { headers, tangerang, banten } = data;
+      const container = document.getElementById("dashboardContent");
+
+      let html = `<h4 class="text-center mb-4 fw-bold">📊 DATA UNDERSPEC</h4>`;
+
+      html += `<h5 class="mt-4 text-primary fw-semibold">WITEL TANGERANG</h5>`;
+      html += renderUnderspecTable(headers, tangerang);
+
+      html += `<h5 class="mt-4 text-primary fw-semibold">WITEL BANTEN</h5>`;
+      html += renderUnderspecTable(headers, banten);
+
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      hideLoading();
+      console.error("Gagal memuat data:", err);
+      document.getElementById("dashboardContent").innerHTML =
+        '<p class="text-center text-danger">Gagal memuat data.</p>';
+    });
+}
+function renderUnderspecTable(headers, rows) {
+  let html = `<div class="table-responsive">
+    <table class="table table-bordered table-sm text-center align-middle">
+      <thead><tr>`;
+
+  headers.forEach(h => {
+    html += `<th style="background-color: #000; color: #fff;">${h}</th>`;
+  });
+
+  html += `</tr></thead><tbody>`;
+
+  rows.forEach(row => {
+    const target = parseFloat((row[1] || "").toString().replace(",", "."));
+    html += `<tr>`;
+
+    row.forEach((cell, idx) => {
+      let cellClass = "text-center";
+      const value = parseFloat((cell || "").toString().replace(",", "."));
+
+      if (idx === 1) {
+        cellClass += " bg-secondary text-white"; // kolom TARGET abu-abu
+      } else if (!isNaN(value) && !isNaN(target) && value > target && idx > 1) {
+        cellClass += " bg-danger text-white"; // nilai > target merah
+      }
+
+      html += `<td class="${cellClass}">${cell ?? '-'}</td>`;
+    });
+
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  return html;
+}
+function loadScc() {
+    showLoading();
+    document.getElementById("headerSection").style.display = "none";
+
+    fetch(`${scriptURL}?kategori=scc`)
+      .then(res => res.json())
+      .then(data => {
+        hideLoading();
+        const container = document.getElementById("dashboardContent");
+
+        let html = `<h4 class="text-center mb-4 fw-bold">📊 SCC COMPLIANCE</h4>`;
+
+        html += `<div class="table-responsive"><table class="table table-bordered table-sm text-center align-middle">
+          <thead>
+  					<tr>
+    					${["TERITORY", "H-1", "", "", "", "H", "", "", "", "GROWTH"]
+      					.map((h, i) => i === 0 || i === 9
+        					? `<th rowspan="2" style="background-color:#000;color:#fff;">${h}</th>`
+        					: i === 1 || i === 5
+        					? `<th colspan="4" style="background-color:#000;color:#fff;">${h}</th>`
+        					: "").join("")}
+  					<tr>
+    					${["NOT COMPLY", "COMPLY", "TOTAL", "AVG 70%", "NOT COMPLY", "COMPLY", "TOTAL", "AVG 70%"]
+      					.map(h => `<th style="background-color:#000;color:#fff;">${h}</th>`).join("")}
+  					</tr>
+					</thead>
+          <tbody>`;
+
+        data.forEach(row => {
+          const territory = (row[0] || "").toString().trim().toUpperCase();
+
+          const navyRows = ["BANTEN", "TANGERANG"];
+          const grayRows = [
+            "DATEL CIKUPA", "DATEL CILEGON", "DATEL SERANG", "DATEL LEBAK",
+            "CIPUTAT", "LENGKONG", "PASAR BARU"
+          ];
+
+          let rowStyle = "";
+          if (navyRows.includes(territory)) {
+            rowStyle = ' style="background-color:#0d6efd; color:white;"';
+          } else if (grayRows.includes(territory)) {
+            rowStyle = ' class="bg-secondary text-white"';
+          }
+
+          html += `<tr>`;
+
+          row.forEach((cell, idx) => {
+            let cellClass = "text-center";
+            const value = parseFloat((cell || "").toString().replace(",", "."));
+            const isAvgColumn = (idx === 4 || idx === 8);
+            const isColoredRow = navyRows.includes(territory) || grayRows.includes(territory);
+
+            if (!isColoredRow && isAvgColumn && !isNaN(value) && value < 70) {
+              cellClass += " bg-danger text-white";
+            }
+
+            let displayValue = cell ?? '-';
+            if (!isNaN(value) && typeof value === "number") {
+              displayValue = value.toFixed(2);
+            }
+
+            let style = "";
+
+						if (navyRows.includes(territory)) {
+  						style = 'background-color:#0d6efd;color:white;';
+						} else if (grayRows.includes(territory)) {
+  						style = 'background-color:#6c757d;color:white;';
+						} else if (!isNaN(value) && isAvgColumn && value < 70) {
+  						style = 'background-color:#dc3545;color:white;';
+						}
+
+						html += `<td class="${cellClass}" style="${style}">${displayValue}</td>`;
+          });
+
+          html += `</tr>`;
+        });
+
+        html += `</tbody></table></div>`;
+        container.innerHTML = html;
+      })
+      .catch(err => {
+        hideLoading();
+        console.error("Gagal memuat data SCC:", err);
+        document.getElementById("dashboardContent").innerHTML =
+          '<p class="text-center text-danger">Gagal memuat data SCC.</p>';
+      });
+  }
 
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
