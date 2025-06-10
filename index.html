@@ -74,8 +74,8 @@
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="#" onclick="loadSummaryTiket()">Summary tiket B2C</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadServiceAvailability()">Service Availability</a></li>
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Assurance Guarantee</a></li>
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">TTR</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadAsgarIoan()">Assurance Guarantee</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadTtrIoan()">TTR</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Underspec</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Tangible</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Validasi</a></li>
@@ -188,7 +188,10 @@ function loadData(kategori) {
     loadServiceAvailability();
     return;
   }
-
+	 if (kategori.toLowerCase().includes('asgar ioan')) {
+    loadServiceAvailability();
+    return;
+  }
 
   fetch(`${scriptURL}?kategori=${encodeURIComponent(kategori)}`)
     .then(response => {
@@ -1490,7 +1493,139 @@ function renderKpiB2cDashboard(data) {
     </table>
   `;
 }
+function loadAsgarIoan() {
+  showLoading();
+  document.getElementById("headerSection").style.display = "none";
+  fetch(`${scriptURL}?kategori=asgar ioan`)
+    .then(response => response.json())
+    .then(data => {
+      hideLoading();
+      document.getElementById("dashboardContent").innerHTML = renderAsgarIoan(data);
+    })
+    .catch(err => {
+      hideLoading();
+      document.getElementById("dashboardContent").innerHTML = `<p class='text-danger text-center'>Gagal memuat data: ${err.message}</p>`;
+    });
+}
 
+function renderAsgarIoan(data) {
+  console.log("ASGAR IOAN DATA:", data);
+  if (!Array.isArray(data) || data.length === 0 || typeof data[0] !== "object") {
+    return "<p class='text-center text-danger'>Tidak ada data tersedia atau format tidak sesuai.</p>";
+  }
+
+  const headers = Object.keys(data[0]);
+  const headerRow = headers.map(h => `<th class="text-white bg-primary text-center">${h}</th>`).join("");
+
+  const rows = data.map(row => {
+    const isEmpty = headers.every(h => row[h] === "" || row[h] === null || row[h] === undefined);
+    const target = parseFloat(row["Target"]) || 0;
+
+    const cells = headers.map(h => {
+      const val = row[h];
+      let cellClass = "text-center";
+
+      if (h !== "Territory" && h !== "Target") {
+        const num = parseFloat(val);
+        if (!isNaN(num) && num < target) {
+          cellClass += " bg-danger text-white";
+        }
+      }
+
+      return `<td class="${cellClass}">${val !== undefined ? val : ""}</td>`;
+    }).join("");
+
+    const rowStyle = isEmpty ? ' style="background-color:#f2f2f2;"' : "";
+    return `<tr${rowStyle}>${cells}</tr>`;
+  }).join("");
+
+  return `
+    <div class="container mt-4">
+      <h4 class="text-center mb-4">📊 Assurance Guarantee - ASGAR IOAN</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm table-hover text-center">
+          <thead><tr>${headerRow}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+function loadTtrIoan() {
+  showLoading();
+  document.getElementById("headerSection").style.display = "none";
+
+  fetch(`${scriptURL}?kategori=ttr`)
+    .then(res => res.json())
+    .then(data => {
+      hideLoading();
+      const container = document.getElementById("dashboardContent");
+
+      if (!data.length) {
+        container.innerHTML = '<p class="text-center text-muted">Tidak ada data TTR ditemukan.</p>';
+        return;
+      }
+
+      let html = `<h4 class="text-center mb-4 fw-bold">📊 KPI TTR BULANAN</h4>`;
+
+      data.forEach(block => {
+        html += `<h5 class="mt-4 fw-semibold text-primary">${block.title}</h5>`;
+
+        // Tabel WITEL
+        if (block.witel && block.witel.rows.length > 0) {
+          html += `<p class="fw-semibold mt-2 mb-1">WITEL</p>`;
+          html += renderTtrTable(block.witel.headers, block.witel.rows);
+        }
+
+        // Tabel STO
+        if (block.sto && block.sto.rows.length > 0) {
+          html += `<p class="fw-semibold mt-4 mb-1">STO</p>`;
+          html += renderTtrTable(block.sto.headers, block.sto.rows);
+        }
+      });
+
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      hideLoading();
+      console.error("Gagal muat TTR:", err);
+      document.getElementById("dashboardContent").innerHTML =
+        '<p class="text-center text-danger">Gagal memuat data TTR.</p>';
+    });
+}
+
+
+function renderTtrTable(headers, rows) {
+  let html = `<div class="table-responsive"><table class="table table-bordered table-sm text-center align-middle">
+    <thead class="table-dark"><tr>`;
+
+  headers.forEach(h => html += `<th>${h}</th>`);
+  html += `</tr></thead><tbody>`;
+
+  rows.forEach(row => {
+    const isTotal = (row[0] || "").toString().toUpperCase() === "TOTAL";
+    const target = parseFloat(row[1]);
+
+    html += `<tr${isTotal ? ' class="fw-bold bg-light"' : ''}>`;
+
+    row.forEach((cell, idx) => {
+      let cellClass = "";
+
+      if (idx > 1) { // kolom bulan (bukan Territory / Target)
+        const num = parseFloat(cell);
+        if (!isNaN(num) && !isNaN(target) && num < target) {
+          cellClass = 'bg-danger text-white';
+        }
+      }
+
+      html += `<td class="${cellClass}">${cell !== undefined && cell !== null ? cell : "-"}</td>`;
+    });
+
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  return html;
+}
 
 
 </script>
