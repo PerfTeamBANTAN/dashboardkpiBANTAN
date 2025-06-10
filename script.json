@@ -150,6 +150,48 @@ function doGet(e) {
       .createTextOutput(JSON.stringify(finalData))
       .setMimeType(ContentService.MimeType.JSON);
 
+  } else if (kategori === 'underspec') {
+  const sheet = SpreadsheetApp
+    .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+    .getSheetByName('UNSPEC');
+  const values = sheet.getDataRange().getValues();
+
+  const headers = values[0];
+  const body = values.slice(1);
+
+  const tangerang = [];
+  const banten = [];
+
+  let mode = 'tangerang';
+
+  body.forEach(row => {
+    const territory = (row[0] || "").toString().trim().toUpperCase();
+
+    if (territory === "BANTEN") {
+      mode = 'banten';
+    }
+
+    if (mode === 'tangerang') {
+      tangerang.push(row);
+    } else {
+      banten.push(row);
+    }
+  });
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ headers, tangerang, banten }))
+    .setMimeType(ContentService.MimeType.JSON);
+
+  } else if (kategori === 'scc') {
+  const sheet = SpreadsheetApp
+    .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+    .getSheetByName('SCC');
+  const values = sheet.getRange(3, 1, sheet.getLastRow() - 2, 10).getValues(); // Mulai dari baris ke-3, 10 kolom
+
+  return ContentService
+    .createTextOutput(JSON.stringify(values))
+    .setMimeType(ContentService.MimeType.JSON);
+
   } else if (kategori === 'service availability') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('SERVICE AVAILABILITY');
     const values = sheet.getDataRange().getValues();
@@ -277,4 +319,6 @@ function doGet(e) {
   return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+
+
 }
