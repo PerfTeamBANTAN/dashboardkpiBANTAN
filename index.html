@@ -2055,10 +2055,26 @@ function renderTangible(data) {
 
         // Bersihkan SEKTOR prefix
         if (colIdx === 0 && typeof val === "string") {
-          val = val.replace(/^SEKTOR\s*-\s*TANGERANG\s*-\s*/i, "")
-                   .replace(/^SEKTOR\s*-\s*BANTEN\s*-\s*/i, "");
-        }
+  val = val
+    .replace(/^SEKTOR\s*-\s*TANGERANG\s*-\s*/i, "")
+    .replace(/^SEKTOR\s*-\s*BANTEN\s*-\s*/i, "");
 
+  // Ganti nama panjang jadi singkatan
+  val = val
+    .replace(/PASAR KEMIS 1/i, "PSK 1")
+    .replace(/PASAR KEMIS 2/i, "PSK 2")
+    .replace(/TANGERANG 1/i, "TAN 1")
+    .replace(/TANGERANG 2/i, "TAN 2")
+    .replace(/PONDOK AREN/i, "PDK AREN")
+    .replace(/GANDASARI 1/i, "GDS 1")
+    .replace(/GANDASARI 2/i, "GDS 2")
+    .replace(/PARUNG PANJANG/i, "P.PANJANG")
+    .replace(/LENGKONG 1/i, "LKG 1")
+    .replace(/LENGKONG 2/i, "LKG 2")
+    .replace(/PANDEGLANG 1/i, "PDG 1")
+    .replace(/PANDEGLANG 2/i, "PDG 2")
+    .replace(/RANGKASBITUNG/i, "RANGKAS");
+}
         const num = parseFloat(val.toString().replace(",", "."));
         const isNegative = !isNaN(num) && num < 0;
         const style = isNegative ? 'background-color:#f8d7da;' : '';
