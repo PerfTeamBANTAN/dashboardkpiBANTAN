@@ -352,6 +352,25 @@ function doGet(e) {
       .createTextOutput(JSON.stringify(data))
       .setMimeType(ContentService.MimeType.JSON);
 
+		} else if (kategori === 'tangible') {
+  const sheet = SpreadsheetApp
+    .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+    .getSheetByName('TANGIBLE');
+
+  const dataTangerang = sheet.getRange("A6:R33").getValues();
+  const dataBanten = sheet.getRange("A40:R51").getValues();
+  const totalTangerang = sheet.getRange("A4:R4").getValues()[0]; // 18 kolom
+  const totalBanten = sheet.getRange("A38:R38").getValues()[0];     // 18 kolom
+
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      data_tangerang: dataTangerang,
+      data_banten: dataBanten,
+      total_tangerang: totalTangerang,
+      total_banten: totalBanten
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+
 }
   return ContentService
     .createTextOutput(JSON.stringify(data))
