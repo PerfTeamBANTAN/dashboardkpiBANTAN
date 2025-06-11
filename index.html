@@ -21,6 +21,18 @@
     .dropdown-menu a {
       font-size: 14px;
     }
+    .dropdown-submenu {
+      position: relative;
+    }
+    .dropdown-submenu > .dropdown-menu {
+      top: 0;
+      left: 100%;
+      margin-left: 0.1rem;
+      margin-right: 0.1rem;
+    }
+    .dropdown-submenu:hover > .dropdown-menu {
+      display: block;
+    }
     .card {
       box-shadow: 0 0 15px rgba(0,0,0,0.05);
       border-radius: 15px;
@@ -95,14 +107,21 @@
             </ul>
           </li>
 	  <li class="nav-item dropdown">
-	    <a class="nav-link dropdown-toggle" href="#" id="kpiB2BDropdown" role="button" data-bs-toggle="dropdown">KPI Non Sektor B2B</a>
-            <ul class="dropdown-menu">
-	      <li><a class="dropdown-item" href="#">HSI</a></li>
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">DATIN</a></li>
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">WIFI</a></li>
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">OLO</a></li>
-            </ul>
-	  </li>
+  <a class="nav-link dropdown-toggle" href="#" id="kpiB2BDropdown" role="button" data-bs-toggle="dropdown">KPI Non Sektor B2B</a>
+  <ul class="dropdown-menu">
+    <li class="dropdown-submenu dropend">
+      <a class="dropdown-item dropdown-toggle" href="#" id="hsiSubmenu" data-bs-toggle="dropdown">HSI</a>
+      <ul class="dropdown-menu" aria-labelledby="hsiSubmenu">
+        <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Q HSI</a></li>
+        <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">ASGAR HSI</a></li>
+        <li><a class="dropdown-item" href="#" onclick="loadTtrHsi()">TTR HSI</a></li>
+      </ul>
+    </li>
+    <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">DATIN</a></li>
+    <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">WIFI</a></li>
+    <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">OLO</a></li>
+  </ul>
+</li>
           <li class="nav-item dropdown">
 	    <a class="nav-link dropdown-toggle" href="#" id="kpiWSADropdown" role="button" data-bs-toggle="dropdown">KPI WSA</a>
             <ul class="dropdown-menu">
@@ -1816,6 +1835,145 @@ function loadScc() {
     });
 }
 
+function loadTtrHsi() {
+  showLoading();
+  document.getElementById('headerSection').style.display = 'none';
+
+  Promise.all([
+    fetch(scriptURL + '?kategori=DETAIL TTR RETAIL').then(res => res.json()),
+    fetch(scriptURL + '?kategori=DETAIL TTR RESELLER').then(res => res.json())
+  ]).then(([retail, reseller]) => {
+    hideLoading();
+    renderTtrHsiPivot(retail, reseller);
+  }).catch(err => {
+    hideLoading();
+    alert("❌ Gagal memuat data TTR HSI: " + err.message);
+  });
+}
+
+function renderTtrHsiPivot(retail, reseller) {
+  const container = document.getElementById("dashboardContent");
+
+  const groupByKey = (data, keys) => {
+    const map = {};
+    data.forEach(row => {
+      const key = keys.map(k => row[k] || "").join("|");
+      if (!map[key]) map[key] = [];
+      map[key].push(row);
+    });
+    return map;
+  };
+
+  const retailGroup = groupByKey(retail, ["WITEL", "WORKZONE"]);
+  const resellerGroup = groupByKey(reseller, ["WITEL", "WORKZONE"]);
+  const allKeys = new Set([...Object.keys(retailGroup), ...Object.keys(resellerGroup)]);
+
+  const witelData = { TANGERANG: [], BANTEN: [] };
+
+  const getRows = (rows, key, isComply = true) =>
+  rows.filter(r => {
+    const val = (r[key] || "").toString().trim().toUpperCase();
+    return isComply ? val === "COMPLY" : val === "NOT_COMPLY";
+  });
+
+  const makeLink = (val, rows) => `<td><a href="#" onclick='showIncidentDetails(${JSON.stringify(rows).replace(/'/g, "&apos;")})'>${val}</a></td>`;
+
+  allKeys.forEach(key => {
+    const [witel, workzone] = key.split("|");
+    const rRows = retailGroup[key] || [];
+    const sRows = resellerGroup[key] || [];
+
+    const rowHtml = `
+      <tr>
+        <td>${workzone}</td>
+        ${makeLink(getRows(rRows, "COMPLY_4_E2E", true).length, getRows(rRows, "COMPLY_4_E2E", true))}
+        ${makeLink(getRows(rRows, "COMPLY_4_E2E", false).length, getRows(rRows, "COMPLY_4_E2E", false))}
+        ${makeLink(getRows(rRows, "COMPLY_24_E2E", true).length, getRows(rRows, "COMPLY_24_E2E", true))}
+        ${makeLink(getRows(rRows, "COMPLY_24_E2E", false).length, getRows(rRows, "COMPLY_24_E2E", false))}
+        ${makeLink([...new Set(rRows.map(r => r.INCIDENT))].length, rRows)}
+        ${makeLink(getRows(sRows, "COMPLY_6_E2E", true).length, getRows(sRows, "COMPLY_6_E2E", true))}
+        ${makeLink(getRows(sRows, "COMPLY_6_E2E", false).length, getRows(sRows, "COMPLY_6_E2E", false))}
+        ${makeLink(getRows(sRows, "COMPLY_36_E2E", true).length, getRows(sRows, "COMPLY_36_E2E", true))}
+        ${makeLink(getRows(sRows, "COMPLY_36_E2E", false).length, getRows(sRows, "COMPLY_36_E2E", false))}
+        ${makeLink([...new Set(sRows.map(r => r.INCIDENT))].length, sRows)}
+      </tr>
+    `;
+
+    const witelKey = (witel || "").toUpperCase().includes("TANGERANG") ? "TANGERANG" : "BANTEN";
+    witelData[witelKey].push(rowHtml);
+  });
+
+  let html = `
+    <h5 class="mb-3 text-center">📊 Pivot TTR HSI dengan COMPLY / NOT_COMPLY</h5>
+  `;
+
+  Object.keys(witelData).forEach(witel => {
+    html += `
+      <h6 class="mt-4 text-primary">WITEL ${witel}</h6>
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm text-center align-middle">
+          <thead>
+            <tr class="table-dark">
+              <th rowspan="2">WORKZONE</th>
+              <th colspan="5" style="background-color:#d4edda;">HSI</th>
+              <th colspan="5" style="background-color:#cce5ff;">RESELLER</th>
+            </tr>
+            <tr class="table-light">
+              <th>4 JAM ✅COPLY</th>
+              <th>4 JAM ❌NOT COMPLY</th>
+              <th>24 JAM ✅COPLY</th>
+              <th>24 JAM ❌NOT COMPLY</th>
+              <th>TOTAL</th>
+              <th>6 JAM ✅COPLY</th>
+              <th>6 JAM ❌NOT COMPLY</th>
+              <th>36 JAM ✅COPLY</th>
+              <th>36 JAM ❌NOT COMPLY</th>
+              <th>TOTAL</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${witelData[witel].join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  });
+
+  html += `<div id="popupDetail" class="mt-4"></div>`;
+  container.innerHTML = html;
+}
+
+
+function showIncidentDetails(rows) {
+  const container = document.getElementById("popupDetail");
+  if (!rows || rows.length === 0) {
+    container.innerHTML = `<div class="alert alert-warning">Tidak ada data tiket ditemukan.</div>`;
+    return;
+  }
+
+  const headers = ["INCIDENT", "CUSTOMER_NAME", "SUMARY", "SERVICE_NO", "REPORTED_DATE", "WORKZONE", "SYMPTOM", "ACTUAL_SOLUTION"];
+
+  let html = `
+    <div class="card mt-4">
+      <div class="card-header bg-info text-white">
+        Detail Tiket (${rows.length} data)
+      </div>
+      <div class="card-body table-responsive p-2">
+        <table class="table table-sm table-bordered">
+          <thead class="table-light">
+            <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+          </thead>
+          <tbody>
+            ${rows.map(row => `
+              <tr>
+                ${headers.map(h => `<td>${row[h] || ""}</td>`).join('')}
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  container.innerHTML = html;
+}
 
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
