@@ -2005,7 +2005,6 @@ function renderTangible(data) {
     <thead>
       <tr>
         <th rowspan="2" style="background:${pastelColors[0]}; color:white; max-width:130px;">SEKTOR</th>
-
         <th colspan="4" style="background:${pastelColors[0]}; color:white;">PROGRES TANGIBLE ODP</th>
         <th colspan="4" style="background:${pastelColors[14]}">STATUS APPROVE ODP (TANGIBLE)</th>
         <th rowspan="2" style="background:#eee; width:10px; max-width:10px; padding:0;"></th>
@@ -2050,24 +2049,25 @@ function renderTangible(data) {
     dataRows.forEach(row => {
       html += `<tr>`;
       row.forEach((cell, colIdx) => {
-  if (colIdx === 1) return; // Hapus kolom HSA
+        if (colIdx === 1) return;
 
-  let val = cell ?? "";
+        let val = cell ?? "";
 
-  // Bersihkan SEKTOR prefix
-  if (colIdx === 0 && typeof val === "string") {
-    val = val.replace(/^SEKTOR\s*-\s*TANGERANG\s*-\s*/i, "")
-             .replace(/^SEKTOR\s*-\s*BANTEN\s*-\s*/i, "");
-  }
+        // Bersihkan SEKTOR prefix
+        if (colIdx === 0 && typeof val === "string") {
+          val = val.replace(/^SEKTOR\s*-\s*TANGERANG\s*-\s*/i, "")
+                   .replace(/^SEKTOR\s*-\s*BANTEN\s*-\s*/i, "");
+        }
 
-  const num = parseFloat(val.toString().replace(",", "."));
-  const isNegative = !isNaN(num) && num < 0;
-  const style = isNegative ? 'background-color:#f8d7da;' : '';
+        const num = parseFloat(val.toString().replace(",", "."));
+        const isNegative = !isNaN(num) && num < 0;
+        const style = isNegative ? 'background-color:#f8d7da;' : '';
 
-  const width = colIdx === 0 ? 'max-width:130px;' :
-                colIdx === 9 ? 'max-width:10px; width:10px; padding:0;' : '';
-  html += `<td style="word-break:break-word; padding:4px; ${width} ${style}">${val}</td>`;
-});
+        const width = colIdx === 0 ? 'max-width:130px;' :
+                      colIdx === 9 ? 'max-width:10px; width:10px; padding:0;' : '';
+
+        html += `<td style="word-break:break-word; padding:4px; ${width} ${style}">${val}</td>`;
+      });
       html += `</tr>`;
     });
 
@@ -2075,6 +2075,8 @@ function renderTangible(data) {
     if (totalRow && totalRow.length) {
       html += `<tr>`;
       totalRow.forEach((val, idx) => {
+        if (idx === 1) return;
+
         const fixed = typeof val === "number" && !Number.isInteger(val) ? val.toFixed(2) : val;
         html += `<td style="background:#003366; color:white; font-weight:bold; font-size:12px; padding:4px;">${fixed}</td>`;
       });
