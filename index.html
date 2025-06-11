@@ -1993,7 +1993,6 @@ function loadTangible() {
 function renderTangible(data) {
   const container = document.getElementById("dashboardContent");
 
-  // Warna pastel kolom
   const pastelColors = [
     "#003366", "#fce4ec", "#C81300", "#319751",
     "#F69F1E", "#f1f8e9", "#f0f4c3", "#E2ED4D",
@@ -2005,14 +2004,14 @@ function renderTangible(data) {
   const manualThead = `
     <thead>
       <tr>
-        <th rowspan="2" style="background:${pastelColors[0]}; color:white;">SEKTOR</th>
-				<th rowspan="2" style="background:${pastelColors[0]}; color:white;">HSA</th>
+        <th rowspan="2" style="background:${pastelColors[0]}; color:white; max-width:130px;">SEKTOR</th>
+        <th rowspan="2" style="background:${pastelColors[0]}; color:white; max-width:80px;">HSA</th>
 
         <th colspan="4" style="background:${pastelColors[0]}; color:white;">PROGRES TANGIBLE ODP</th>
         <th colspan="4" style="background:${pastelColors[14]}">STATUS APPROVE ODP (TANGIBLE)</th>
-        <th rowspan="2" style="background:#eee;"></th>
+        <th rowspan="2" style="background:#eee; width:10px; max-width:10px; padding:0;"></th>
         <th colspan="4" style="background:${pastelColors[0]}; color:white;">PROGRES TANGIBLE ODCR</th>
-        <th colspan="4" style="background:${pastelColors[14]}">STATUS APPROVE ODC</th>
+        <th colspan="3" style="background:${pastelColors[14]}">STATUS APPROVE ODC</th>
       </tr>
       <tr>
         <th style="background:${pastelColors[2]}; color:white;">TARGET</th>
@@ -2022,7 +2021,7 @@ function renderTangible(data) {
 
         <th style="background:${pastelColors[4]}">SISA TARGET 15hk</th>
         <th style="background:${pastelColors[7]}">Blm di cek</th>
-        <th style="background:${pastelColors[15]};">Return</th>
+        <th style="background:${pastelColors[15]}">Return</th>
         <th style="background:${pastelColors[9]}">%Kualitas</th>
 
         <th style="background:${pastelColors[2]}; color:white;">TARGET</th>
@@ -2043,7 +2042,8 @@ function renderTangible(data) {
     let html = `
       <h6 class="mt-4 text-uppercase text-primary">${title}</h6>
       <div class="table-responsive">
-        <table class="table table-bordered table-sm text-center align-middle">
+        <table class="table table-bordered table-sm text-center align-middle"
+               style="table-layout:fixed; width:100%; font-size:12px;">
           ${manualThead}
           <tbody>`;
 
@@ -2051,28 +2051,32 @@ function renderTangible(data) {
     dataRows.forEach(row => {
       html += `<tr>`;
       row.forEach((cell, colIdx) => {
-        const val = cell ?? "";
+        let val = cell ?? "";
+
+        // Hapus "SEKTOR - TANGERANG -" dan "SEKTOR - BANTEN -" pada kolom SEKTOR
+        if (colIdx === 0 && typeof val === "string") {
+          val = val.replace(/^SEKTOR\s*-\s*TANGERANG\s*-\s*/i, "")
+                   .replace(/^SEKTOR\s*-\s*BANTEN\s*-\s*/i, "");
+        }
+
         const num = parseFloat(val.toString().replace(",", "."));
         const isNegative = !isNaN(num) && num < 0;
-        const style = isNegative ? 'style="background-color:#f8d7da;"' : '';
-        html += `<td ${style}>${val}</td>`;
+        const style = isNegative ? 'background-color:#f8d7da;' : '';
+
+        // Kolom 0 dan 1 diberi max-width agar wrap
+        const width = colIdx <= 1 ? 'max-width:130px;' : '';
+        html += `<td style="word-break:break-word; padding:4px; ${width} ${style}">${val}</td>`;
       });
       html += `</tr>`;
     });
 
-    // Baris TOTAL dengan warna biru tua dan teks putih
+    // Baris TOTAL
     if (totalRow && totalRow.length) {
       html += `<tr>`;
       totalRow.forEach((val, idx) => {
         const fixed = typeof val === "number" && !Number.isInteger(val) ? val.toFixed(2) : val;
-        html += `<td style="background:#003366; color:white; font-weight:bold;">${fixed}</td>`;
+        html += `<td style="background:#003366; color:white; font-weight:bold; font-size:12px; padding:4px;">${fixed}</td>`;
       });
-
-      const missing = 19 - totalRow.length;
-      for (let i = 0; i < missing; i++) {
-        html += `<td style="background:#003366; color:white; font-weight:bold;"></td>`;
-      }
-
       html += `</tr>`;
     }
 
@@ -2088,9 +2092,6 @@ function renderTangible(data) {
 
   container.innerHTML = html;
 }
-
-
-
 
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
