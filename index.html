@@ -2005,7 +2005,6 @@ function renderTangible(data) {
     <thead>
       <tr>
         <th rowspan="2" style="background:${pastelColors[0]}; color:white; max-width:130px;">SEKTOR</th>
-        <th rowspan="2" style="background:${pastelColors[0]}; color:white; max-width:80px;">HSA</th>
 
         <th colspan="4" style="background:${pastelColors[0]}; color:white;">PROGRES TANGIBLE ODP</th>
         <th colspan="4" style="background:${pastelColors[14]}">STATUS APPROVE ODP (TANGIBLE)</th>
@@ -2051,22 +2050,24 @@ function renderTangible(data) {
     dataRows.forEach(row => {
       html += `<tr>`;
       row.forEach((cell, colIdx) => {
-        let val = cell ?? "";
+  if (colIdx === 1) return; // Hapus kolom HSA
 
-        // Hapus "SEKTOR - TANGERANG -" dan "SEKTOR - BANTEN -" pada kolom SEKTOR
-        if (colIdx === 0 && typeof val === "string") {
-          val = val.replace(/^SEKTOR\s*-\s*TANGERANG\s*-\s*/i, "")
-                   .replace(/^SEKTOR\s*-\s*BANTEN\s*-\s*/i, "");
-        }
+  let val = cell ?? "";
 
-        const num = parseFloat(val.toString().replace(",", "."));
-        const isNegative = !isNaN(num) && num < 0;
-        const style = isNegative ? 'background-color:#f8d7da;' : '';
+  // Bersihkan SEKTOR prefix
+  if (colIdx === 0 && typeof val === "string") {
+    val = val.replace(/^SEKTOR\s*-\s*TANGERANG\s*-\s*/i, "")
+             .replace(/^SEKTOR\s*-\s*BANTEN\s*-\s*/i, "");
+  }
 
-        // Kolom 0 dan 1 diberi max-width agar wrap
-        const width = colIdx <= 1 ? 'max-width:130px;' : '';
-        html += `<td style="word-break:break-word; padding:4px; ${width} ${style}">${val}</td>`;
-      });
+  const num = parseFloat(val.toString().replace(",", "."));
+  const isNegative = !isNaN(num) && num < 0;
+  const style = isNegative ? 'background-color:#f8d7da;' : '';
+
+  const width = colIdx === 0 ? 'max-width:130px;' :
+                colIdx === 9 ? 'max-width:10px; width:10px; padding:0;' : '';
+  html += `<td style="word-break:break-word; padding:4px; ${width} ${style}">${val}</td>`;
+});
       html += `</tr>`;
     });
 
