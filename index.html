@@ -89,7 +89,7 @@
               <li><a class="dropdown-item" href="#" onclick="loadAsgarIoan()">Assurance Guarantee</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadTtrIoan()">TTR</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadUnderspec()">Underspec</a></li>
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Tangible</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadTangible()">Tangible</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Validasi</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">SQM</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadScc()">SCC</a></li>
@@ -1976,6 +1976,121 @@ function showIncidentDetails(rows) {
     </div>`;
   container.innerHTML = html;
 }
+function loadTangible() {
+  showLoading();
+  document.getElementById('headerSection').style.display = 'none';
+  fetch(`${scriptURL}?kategori=tangible`)
+    .then(res => res.json())
+    .then(data => {
+      hideLoading();
+      renderTangible(data);
+    }).catch(err => {
+      hideLoading();
+      alert("❌ Gagal memuat data Tangible: " + err.message);
+    });
+}
+
+function renderTangible(data) {
+  const container = document.getElementById("dashboardContent");
+
+  // Warna pastel kolom
+  const pastelColors = [
+    "#003366", "#fce4ec", "#C81300", "#319751",
+    "#F69F1E", "#f1f8e9", "#f0f4c3", "#E2ED4D",
+    "#e0f7fa", "#73BFFD", "#f9fbe7", "#e0f2f1",
+    "#e8eaf6", "#fff8e1", "#e1f5fe", "#FF8379",
+    "#ede7f6", "#fce4ec"
+  ];
+
+  const manualThead = `
+    <thead>
+      <tr>
+        <th rowspan="2" style="background:${pastelColors[0]}; color:white;">SEKTOR</th>
+				<th rowspan="2" style="background:${pastelColors[0]}; color:white;">HSA</th>
+
+        <th colspan="4" style="background:${pastelColors[0]}; color:white;">PROGRES TANGIBLE ODP</th>
+        <th colspan="4" style="background:${pastelColors[14]}">STATUS APPROVE ODP (TANGIBLE)</th>
+        <th rowspan="2" style="background:#eee;"></th>
+        <th colspan="4" style="background:${pastelColors[0]}; color:white;">PROGRES TANGIBLE ODCR</th>
+        <th colspan="4" style="background:${pastelColors[14]}">STATUS APPROVE ODC</th>
+      </tr>
+      <tr>
+        <th style="background:${pastelColors[2]}; color:white;">TARGET</th>
+        <th style="background:${pastelColors[3]}; color:white;">APPROVE</th>
+        <th style="background:${pastelColors[4]}">GAP s/d HI</th>
+        <th style="background:${pastelColors[5]}">BLM PROGRES</th>
+
+        <th style="background:${pastelColors[4]}">SISA TARGET 15hk</th>
+        <th style="background:${pastelColors[7]}">Blm di cek</th>
+        <th style="background:${pastelColors[15]};">Return</th>
+        <th style="background:${pastelColors[9]}">%Kualitas</th>
+
+        <th style="background:${pastelColors[2]}; color:white;">TARGET</th>
+        <th style="background:${pastelColors[3]}; color:white;">APPROVE</th>
+        <th style="background:${pastelColors[4]}">GAP s/d HI</th>
+        <th style="background:${pastelColors[5]}">BLM PROGRES</th>
+
+        <th style="background:${pastelColors[7]}">Blm di cek</th>
+        <th style="background:${pastelColors[15]}">Return</th>
+        <th style="background:${pastelColors[9]}">%Kualitas</th>
+      </tr>
+    </thead>
+  `;
+
+  const renderTable = (dataRows, totalRow, title) => {
+    if (!dataRows.length) return "";
+
+    let html = `
+      <h6 class="mt-4 text-uppercase text-primary">${title}</h6>
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm text-center align-middle">
+          ${manualThead}
+          <tbody>`;
+
+    // Baris data
+    dataRows.forEach(row => {
+      html += `<tr>`;
+      row.forEach((cell, colIdx) => {
+        const val = cell ?? "";
+        const num = parseFloat(val.toString().replace(",", "."));
+        const isNegative = !isNaN(num) && num < 0;
+        const style = isNegative ? 'style="background-color:#f8d7da;"' : '';
+        html += `<td ${style}>${val}</td>`;
+      });
+      html += `</tr>`;
+    });
+
+    // Baris TOTAL dengan warna biru tua dan teks putih
+    if (totalRow && totalRow.length) {
+      html += `<tr>`;
+      totalRow.forEach((val, idx) => {
+        const fixed = typeof val === "number" && !Number.isInteger(val) ? val.toFixed(2) : val;
+        html += `<td style="background:#003366; color:white; font-weight:bold;">${fixed}</td>`;
+      });
+
+      const missing = 19 - totalRow.length;
+      for (let i = 0; i < missing; i++) {
+        html += `<td style="background:#003366; color:white; font-weight:bold;"></td>`;
+      }
+
+      html += `</tr>`;
+    }
+
+    html += `</tbody></table></div>`;
+    return html;
+  };
+
+  const html = `
+    <h5 class="text-center mb-4">📊 TANGIBLE STATUS</h5>
+    ${renderTable(data.data_tangerang, data.total_tangerang, "TANGERANG")}
+    ${renderTable(data.data_banten, data.total_banten, "BANTEN")}
+  `;
+
+  container.innerHTML = html;
+}
+
+
+
 
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
