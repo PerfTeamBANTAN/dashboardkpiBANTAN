@@ -315,6 +315,43 @@ function doGet(e) {
 
   const result = Object.values(dataMap);
   return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+	
+	} else if (kategori === 'detail ttr retail') {
+    const sheet = SpreadsheetApp
+      .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+      .getSheetByName('DETAIL TTR RETAIL');
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0];
+    const body = values.slice(1);
+
+    const data = body.map(row => {
+      let obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      return obj;
+    });
+
+    return ContentService
+      .createTextOutput(JSON.stringify(data))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } else if (kategori === 'detail ttr reseller') {
+    const sheet = SpreadsheetApp
+      .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+      .getSheetByName('DETAIL TTR RESELLER');
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0];
+    const body = values.slice(1);
+
+    const data = body.map(row => {
+      let obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      return obj;
+    });
+
+    return ContentService
+      .createTextOutput(JSON.stringify(data))
+      .setMimeType(ContentService.MimeType.JSON);
+
 }
   return ContentService
     .createTextOutput(JSON.stringify(data))
