@@ -1457,56 +1457,48 @@ function renderKpiB2cDashboard(data) {
   }
 
   function getHsaRanking() {
-    const hsaTotal = {};
-    data.forEach(item => {
-      if (item.INDIKATOR === "TOTAL ACH B2C") {
-        const hsa = (item.HSA || "").toUpperCase();
-        if (hsa !== "AMIN") {
-          const real = parseFloat(item.REAL) || 0;
-          hsaTotal[hsa] = real;
-        }
-      }
-    });
-    return Object.entries(hsaTotal)
-      .map(([hsa, real]) => ({ hsa, real }))
-      .sort((a, b) => a.real - b.real)
-      .slice(0, 10)
-      .map((item, i) => `
-        <tr>
-          <td>${item.hsa}</td>
-          <td class="${item.real < 70 ? 'text-danger' : 'text-success'} fw-bold">${item.real.toFixed(2)}%</td>
-          <td class="fs-5">☠️</td>
-        </tr>`).join("");
-  }
+  const hsaData = data.filter(item =>
+    item.INDIKATOR === "TOTAL ACH B2C" && item.HSA && item.STO && item.HSA.toUpperCase() !== "AMIN"
+  );
 
-  function getBestHsaRanking() {
-    const hsaTotal = {};
-    data.forEach(item => {
-      if (item.INDIKATOR === "TOTAL ACH B2C") {
-        const hsa = (item.HSA || "").toUpperCase();
-        if (hsa !== "AMIN") {
-          const real = parseFloat(item.REAL) || 0;
-          hsaTotal[hsa] = real;
-        }
-      }
-    });
+  return hsaData
+    .sort((a, b) => parseFloat(a.REAL) - parseFloat(b.REAL)) // dari rendah ke tinggi
+    .slice(0, 10)
+    .map(item => `
+      <tr>
+        <td>${item.STO}</td>
+        <td>${item.HSA}</td>
+        <td class="${item.REAL < 70 ? 'text-danger' : 'text-success'} fw-bold">${parseFloat(item.REAL).toFixed(2)}%</td>
+        <td class="fs-5">☠️</td>
+      </tr>
+    `).join("");
+}
 
-    const ranking = Object.entries(hsaTotal)
-      .map(([hsa, real]) => ({ hsa, real }))
-      .sort((a, b) => b.real - a.real)
-      .slice(0, 10);
+function getBestHsaRanking() {
+  const hsaData = data.filter(item =>
+    item.INDIKATOR === "TOTAL ACH B2C" && item.HSA && item.STO && item.HSA.toUpperCase() !== "AMIN"
+  );
 
-    return {
-      list: ranking.map((item, i) => `
-        <tr>
-          <td>${item.hsa}</td>
-          <td class="${item.real < 70 ? 'text-danger' : 'text-success'} fw-bold">${item.real.toFixed(2)}%</td>
-          <td class="fs-5">🏅</td>
-        </tr>`).join(""),
-      max: ranking[0]?.real || 0,
-      min: ranking[ranking.length - 1]?.real || 0
-    };
-  }
+  const sorted = hsaData
+    .sort((a, b) => parseFloat(b.REAL) - parseFloat(a.REAL)) // dari tinggi ke rendah
+    .slice(0, 10);
+
+  const max = sorted[0]?.REAL || 0;
+  const min = sorted[sorted.length - 1]?.REAL || 0;
+
+  return {
+    list: sorted.map(item => `
+      <tr>
+        <td>${item.STO}</td>
+        <td>${item.HSA}</td>
+        <td class="${item.REAL < 70 ? 'text-danger' : 'text-success'} fw-bold">${parseFloat(item.REAL).toFixed(2)}%</td>
+        <td class="fs-5">🏅</td>
+      </tr>
+    `).join(""),
+    max,
+    min
+  };
+}
 
   function getStoRanking() {
     return data.filter(item => item.INDIKATOR === "TOTAL ACH B2C" && item.STO && item.HSA)
@@ -1567,7 +1559,7 @@ function renderKpiB2cDashboard(data) {
           <div class="card-body">
             <table class="table table-sm table-borderless text-center align-middle">
               <thead class="table-secondary">
-                <tr><th>HSA</th><th>ACH (%)</th><th>☠️</th></tr>
+                <tr><th>STO</th><th>HSA</th><th>ACH (%)</th><th>☠️</th></tr>
               </thead>
               <tbody>${getHsaRanking()}</tbody>
             </table>
@@ -1584,7 +1576,7 @@ function renderKpiB2cDashboard(data) {
             <div class="card-body">
               <table class="table table-sm table-borderless text-center align-middle">
                 <thead class="table-secondary">
-                  <tr><th>HSA</th><th>ACH (%)</th><th>🏅</th></tr>
+                  <tr><th>STO</th><th>HSA</th><th>ACH (%)</th><th>🏅</th></tr>
                 </thead>
                 <tbody>${best.list}</tbody>
               </table>
