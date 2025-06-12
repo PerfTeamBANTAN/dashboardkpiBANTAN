@@ -30,6 +30,7 @@
       margin-left: 0.1rem;
       margin-right: 0.1rem;
     }
+    
     .dropdown-submenu:hover > .dropdown-menu {
       display: block;
     }
@@ -49,8 +50,11 @@
     .card-body.bg-yellow { background-color: #fff3cd; border: 2px solid #ffc107; }
     .card-body.bg-red { background-color: #f8d7da; border: 2px solid #dc3545; }
     .card-body.bg-orange { background-color: #ffe5b4; border: 2px solid #fd7e14; }
-    .card:hover .card-body { transform: scale(1.03); cursor: pointer; transition: transform 0.2s ease-in-out; }
-    
+    .card:hover .card-body { transform: scale(1.03); cursor: pointer; transition: transform 0.2s ease-in-out; 
+  }
+    .card { border-radius: .75rem; }
+  .card-header { font-size: 1.1rem; letter-spacing: 0.5px; }
+  table th, table td { vertical-align: middle; }
   </style>
   
 </head>
@@ -1237,7 +1241,7 @@ function loadPiLaten12() {
   showLoading();
   document.getElementById("headerSection").style.display = "none";
   const container = document.getElementById("dashboardContent");
-  
+
   Promise.all([
     fetch(`${scriptURL}?kategori=12 pi laten`).then(res => res.json()),
     fetch(`${scriptURL}?kategori=dashboard ioan b2c`).then(res => res.json())
@@ -1253,7 +1257,6 @@ function loadPiLaten12() {
       container.innerHTML = `<p class='text-danger text-center'>Gagal memuat data: ${err.message}</p>`;
     });
 }
-
 
 function renderPiLatenDashboard(data) {
   function getStoData(sto) {
@@ -1277,13 +1280,13 @@ function renderPiLatenDashboard(data) {
       const h1 = parseFloat(item["REAL H-1"]) || 0;
       const h2 = parseFloat(item.REAL) || 0;
       const growth = h2 - h1;
-      let icon = "↔️";
-      if (growth > 0.01) icon = "⬆️";
-      else if (growth < -0.01) icon = "⬇️";
+      let icon = "→";
+      if (growth > 0.01) icon = "↑";
+      else if (growth < -0.01) icon = "↓";
       return `
         <tr>
           <td>${item.INDIKATOR}</td>
-          <td>${target.toFixed(2)}</td>
+          <td class="text-danger fw-bold">${target.toFixed(2)}</td>
           <td>${h1.toFixed(2)}</td>
           <td class="text-center">${icon}</td>
           <td>${h2.toFixed(2)}</td>
@@ -1291,86 +1294,112 @@ function renderPiLatenDashboard(data) {
     }).join("");
   }
 
+  function getRankingTabel(title, list) {
+    return `
+      <div class="col-md-6">
+        <div class="card border-0 shadow rounded-4 h-100 animate__animated animate__fadeIn" style="background: linear-gradient(135deg, #f9f9f9, #ffffff);">
+          <div class="card-header bg-dark text-white text-center fw-bold rounded-top-4">${title}</div>
+          <div class="card-body p-3">
+            <table class="table table-sm table-hover table-bordered align-middle text-center rounded-3 overflow-hidden">
+              <thead class="table-dark">
+                <tr><th>#</th><th>HSA/STO</th><th>ACH %</th></tr>
+              </thead>
+              <tbody>
+                ${list.map((item, idx) => `
+                  <tr>
+                    <td>${idx + 1}</td>
+                    <td class="fw-semibold">${item.hsa || (item.STO + ' (' + item.HSA + ')')}</td>
+                    <td class="fw-bold ${item.total >= 0.95 ? 'text-success' : 'text-danger'}">
+                      ${(item.total).toFixed(0)}
+                    </td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+  }
+
   function getHsaRanking(type = "best") {
     const hsaTotal = {};
     data.forEach(item => {
       const hsa = item.HSA || "";
       const ach = parseFloat(item["ACH %"]) || 0;
-      if (!hsaTotal[hsa]) hsaTotal[hsa] = 0;
-      if (item.INDIKATOR === "TOTAL ACH") hsaTotal[hsa] = ach;
+      if (item.INDIKATOR === "TOTAL ACH" && hsa !== "AMIN") {
+        hsaTotal[hsa] = ach;
+      }
     });
     const hasil = Object.entries(hsaTotal).map(([hsa, total]) => ({ hsa, total }));
     return hasil
       .sort((a, b) => type === "best" ? b.total - a.total : a.total - b.total)
-      .slice(0, 3)
-      .map((item, i) => `
-        <tr>
-          <td>${item.hsa}</td>
-          <td>${item.total.toFixed(2)}</td>
-          <td class="text-center">${type === "best" ? ["🏆", "🥈", "🥉"][i] : "☠️"}</td>
-        </tr>`).join("");
+      .slice(0, 3);
   }
 
   function getStoRanking() {
-    const list = data.filter(item => item.INDIKATOR === "TOTAL ACH" && item.STO && item.HSA);
-    return list
+    return data
+      .filter(item =>
+        item.INDIKATOR === "TOTAL ACH" &&
+        item.STO &&
+        item.HSA &&
+        item.STO !== "TANGERANG" &&
+        item.STO !== "BANTEN"
+      )
       .sort((a, b) => parseFloat(b["ACH %"]) - parseFloat(a["ACH %"]))
       .slice(0, 5)
-      .map(item => `
-        <tr>
-          <td>${item.STO}</td>
-          <td>${item.HSA}</td>
-          <td>${parseFloat(item["ACH %"]).toFixed(2)}</td>
-        </tr>`).join("");
+      .map(item => ({
+        hsa: item.STO + ' (' + item.HSA + ')',
+        total: parseFloat(item["ACH %"])
+      }));
   }
 
   const tgrData = getStoData("TANGERANG");
   const banData = getStoData("BANTEN");
+  const bestHsa = getHsaRanking("best");
+  const worstHsa = getHsaRanking("worst");
+  const topSto = getStoRanking();
 
   return `
-    <div class="row mb-4">
-      <div class="col-md-6">
-        <h5 class="text-center text-danger">12 PI LATEN - STO TANGERANG</h5>
-        <div class="alert alert-success text-center">LULUS PI LATEN: ${hitungLulus(tgrData)} Indikator</div>
-        <div class="alert alert-danger text-center">KPI NOT ACH: ${hitungGagal(tgrData)}</div>
-        <table class="table table-bordered table-sm">
-          <thead class="table-danger text-center">
-            <tr><th>Indikator</th><th>Target</th><th>H-1</th><th>🔄</th><th>H</th></tr>
-          </thead>
-          <tbody>${getGagalIndikator(tgrData)}</tbody>
-        </table>
-      </div>
-      <div class="col-md-6">
-        <h5 class="text-center text-danger">12 PI LATEN - STO BANTEN</h5>
-        <div class="alert alert-success text-center">LULUS PI LATEN: ${hitungLulus(banData)} Indikator</div>
-        <div class="alert alert-danger text-center">KPI NOT ACH: ${hitungGagal(banData)}</div>
-        <table class="table table-bordered table-sm">
-          <thead class="table-danger text-center">
-            <tr><th>Indikator</th><th>Target</th><th>H-1</th><th>🔄</th><th>H</th></tr>
-          </thead>
-          <tbody>${getGagalIndikator(banData)}</tbody>
-        </table>
-      </div>
+    <div class="row g-4 mb-4">
+      ${["TANGERANG", "BANTEN"].map(sto => {
+        const stoData = getStoData(sto);
+        const totalLulus = hitungLulus(stoData);
+        const badgeClass = totalLulus >= 12 ? 'bg-gradient bg-primary' : 'bg-warning text-dark';
+        const labelClass = totalLulus >= 12 ? 'PLATINUM' : 'GOLD';
+        return `
+        <div class="col-md-6">
+          <div class="card border-0 shadow-lg rounded-4 animate__animated animate__fadeInUp">
+            <div class="card-header text-white text-center fw-bold ${badgeClass} rounded-top-4">12 PI LATEN - STO ${sto}</div>
+            <div class="card-body p-3 bg-light rounded-bottom-4">
+              <div class="d-flex justify-content-around mb-3">
+                <span class="badge bg-success px-3 py-2 fs-6 shadow-sm">✅ LULUS: ${totalLulus}</span>
+                <span class="badge bg-danger px-3 py-2 fs-6 shadow-sm">❌ GAGAL: ${hitungGagal(stoData)}</span>
+                <span class="badge ${badgeClass} px-3 py-2 fs-6 shadow-sm">🏅 ${labelClass}</span>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover text-center align-middle rounded-3 overflow-hidden">
+                  <thead class="table-dark">
+                    <tr><th>Indikator</th><th>Target</th><th>H-1</th><th>Δ</th><th>H</th></tr>
+                  </thead>
+                  <tbody>${getGagalIndikator(stoData)}</tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }).join("")}
     </div>
-    <h5 class="text-center">Worst Ranking HSA 12 PI LATEN</h5>
-    <table class="table table-sm table-bordered text-center w-50 mx-auto">
-      <thead class="table-dark"><tr><th>HSA</th><th>ACH</th><th>ACH KPI</th></tr></thead>
-      <tbody>${getHsaRanking("worst")}</tbody>
-    </table>
 
-    <h5 class="text-center mt-4">Best Ranking HSA 12 PI LATEN</h5>
-    <table class="table table-sm table-bordered text-center w-50 mx-auto">
-      <thead class="table-dark"><tr><th>HSA</th><th>ACH</th><th>ACH KPI</th></tr></thead>
-      <tbody>${getHsaRanking("best")}</tbody>
-    </table>
+    <div class="row g-4">
+      ${getRankingTabel("Top 3 HSA with Best ACH", bestHsa)}
+      ${getRankingTabel("Top 3 HSA with Worst ACH", worstHsa)}
+    </div>
 
-    <h5 class="text-center mt-4">Best STO 12 PI LATEN</h5>
-    <table class="table table-sm table-bordered text-center w-75 mx-auto">
-      <thead class="table-dark"><tr><th>STO</th><th>HSA</th><th>ACH KPI</th></tr></thead>
-      <tbody>${getStoRanking()}</tbody>
-    </table>
+    <div class="row mt-4">
+      ${getRankingTabel("Top 5 STO with Best ACH", topSto)}
+    </div>
   `;
 }
+
 function renderKpiB2cDashboard(data) {
   function getStoData(sto) {
     return data.filter(item =>
@@ -1388,11 +1417,7 @@ function renderKpiB2cDashboard(data) {
       const real = parseFloat(item.REAL) || 0;
       const target = parseFloat(item.TARGET) || 0;
       const indikator = item.INDIKATOR || "";
-      if (isExceptionIndikator(indikator)) {
-        return real < target;
-      } else {
-        return real > target;
-      }
+      return isExceptionIndikator(indikator) ? real < target : real > target;
     }).length;
   }
 
@@ -1401,11 +1426,7 @@ function renderKpiB2cDashboard(data) {
       const real = parseFloat(item.REAL) || 0;
       const target = parseFloat(item.TARGET) || 0;
       const indikator = item.INDIKATOR || "";
-      if (isExceptionIndikator(indikator)) {
-        return real > target;
-      } else {
-        return real < target;
-      }
+      return isExceptionIndikator(indikator) ? real > target : real < target;
     }).length;
   }
 
@@ -1414,106 +1435,137 @@ function renderKpiB2cDashboard(data) {
       const real = parseFloat(item.REAL) || 0;
       const target = parseFloat(item.TARGET) || 0;
       const indikator = item.INDIKATOR || "";
-      if (isExceptionIndikator(indikator)) {
-        return real > target;
-      } else {
-        return real < target;
-      }
+      return isExceptionIndikator(indikator) ? real > target : real < target;
     }).map(item => {
       const target = parseFloat(item.TARGET) || 0;
       const h1 = parseFloat(item["REAL H-1"]) || 0;
       const h2 = parseFloat(item.REAL) || 0;
       const growth = h2 - h1;
-      let icon = "↔️";
-      if (growth > 0.01) icon = "⬆️";
-      else if (growth < -0.01) icon = "⬇️";
+      let icon = "⇨";
+      let color = "text-secondary";
+      if (growth > 0.1) icon = "⬆️", color = "text-success";
+      else if (growth < -0.1) icon = "⬇️", color = "text-danger";
       return `
         <tr>
-          <td>${item.INDIKATOR}</td>
-          <td>${target.toFixed(2)}</td>
-          <td>${h1.toFixed(2)}</td>
-          <td class="text-center">${icon}</td>
-          <td>${h2.toFixed(2)}</td>
+          <td class="text-start">${item.INDIKATOR}</td>
+          <td><span class="badge bg-danger">${target.toFixed(1)}</span></td>
+          <td>${h1.toFixed(1)}</td>
+          <td class="${color} fs-5">${icon}</td>
+          <td>${h2.toFixed(1)}</td>
         </tr>`;
     }).join("");
   }
 
-  function getHsaRanking(type = "best") {
-    const hsaTotal = {};
-    data.forEach(item => {
-      if (item.INDIKATOR === "TOTAL ACH B2C") {
-        const hsa = item.HSA || "";
+  function getHsaRanking() {
+  const hsaTotal = {};
+  data.forEach(item => {
+    if (item.INDIKATOR === "TOTAL ACH B2C") {
+      const hsa = (item.HSA || "").toUpperCase();
+      if (hsa !== "AMIN") {
         const real = parseFloat(item.REAL) || 0;
         hsaTotal[hsa] = real;
       }
-    });
-    const hasil = Object.entries(hsaTotal).map(([hsa, real]) => ({ hsa, real }));
-    return hasil
-      .sort((a, b) => b.real - a.real)
-      .slice(0, 3)
-      .map((item, i) => `
-        <tr>
-          <td>${item.hsa}</td>
-          <td>${item.real.toFixed(2)}</td>
-          <td class="text-center">${["🏆", "🥈", "🥉"][i]}</td>
-        </tr>`).join("");
-  }
+    }
+  });
+  return Object.entries(hsaTotal)
+    .map(([hsa, real]) => ({ hsa, real }))
+    .sort((a, b) => a.real - b.real) // Worst ranking (kecil ke besar)
+    .slice(0, 3)
+    .map((item, i) => `
+      <tr>
+        <td>${item.hsa}</td>
+        <td class="${item.real < 70 ? 'text-danger' : 'text-success'} fw-bold">${item.real.toFixed(2)}%</td>
+        <td class="fs-5">${["🥇", "🥈", "🥉"][i]}</td>
+      </tr>`).join("");
+}
 
   function getStoRanking() {
-    const list = data.filter(item => item.INDIKATOR === "TOTAL ACH B2C" && item.STO && item.HSA);
-    return list
+    return data.filter(item => item.INDIKATOR === "TOTAL ACH B2C" && item.STO && item.HSA)
       .sort((a, b) => parseFloat(b.REAL) - parseFloat(a.REAL))
       .slice(0, 5)
       .map(item => `
         <tr>
           <td>${item.STO}</td>
           <td>${item.HSA}</td>
-          <td>${parseFloat(item.REAL).toFixed(2)}</td>
+          <td class="fw-bold">${parseFloat(item.REAL).toFixed(1)}%</td>
         </tr>`).join("");
   }
 
-  const tgrData = getStoData("TANGERANG");
-  const banData = getStoData("BANTEN");
+  function renderStoCard(sto, color) {
+    const dataSto = getStoData(sto);
+    const lulus = hitungLulus(dataSto);
+    const gagal = hitungGagal(dataSto);
+    const total = lulus + gagal;
+    const percent = total > 0 ? (lulus / total) * 100 : 0;
+
+    return `
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header text-white fw-bold text-center" style="background: ${color}; border-radius: .5rem .5rem 0 0;">
+            KPI IOAN B2C - STO ${sto.toUpperCase()}
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small">
+                <span class="text-muted">LULUS: ${lulus} Indikator</span>
+                <span class="text-muted">TOTAL: ${total}</span>
+              </div>
+              <div class="progress rounded-pill" style="height: 12px;">
+                <div class="progress-bar bg-success" style="width: ${percent.toFixed(1)}%"></div>
+              </div>
+            </div>
+            <table class="table table-hover table-sm align-middle text-center">
+              <thead class="table-light">
+                <tr><th>Indikator</th><th>Target</th><th>H-1</th><th>Δ</th><th>H</th></tr>
+              </thead>
+              <tbody>${getGagalIndikator(dataSto)}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+  }
 
   return `
-    <div class="row mb-4">
-      <div class="col-md-6">
-        <h5 class="text-center text-primary">KPI IOAN B2C - STO TANGERANG</h5>
-        <div class="alert alert-success text-center">LULUS PI IOAN: ${hitungLulus(tgrData)} Indikator</div>
-        <div class="alert alert-danger text-center">KPI NOT ACH: ${hitungGagal(tgrData)}</div>
-        <table class="table table-bordered table-sm">
-          <thead class="table-primary text-center">
-            <tr><th>Indikator</th><th>Target</th><th>H-1</th><th>🔄</th><th>H</th></tr>
-          </thead>
-          <tbody>${getGagalIndikator(tgrData)}</tbody>
-        </table>
-      </div>
-      <div class="col-md-6">
-        <h5 class="text-center text-primary">KPI IOAN B2C - STO BANTEN</h5>
-        <div class="alert alert-success text-center">LULUS PI IOAN: ${hitungLulus(banData)} Indikator</div>
-        <div class="alert alert-danger text-center">KPI NOT ACH: ${hitungGagal(banData)}</div>
-        <table class="table table-bordered table-sm">
-          <thead class="table-primary text-center">
-            <tr><th>Indikator</th><th>Target</th><th>H-1</th><th>🔄</th><th>H</th></tr>
-          </thead>
-          <tbody>${getGagalIndikator(banData)}</tbody>
-        </table>
+    <div class="row g-4">
+      ${renderStoCard("TANGERANG", "linear-gradient(45deg, #007bff, #00c6ff)")}
+      ${renderStoCard("BANTEN", "linear-gradient(45deg, #dc3545, #ff6f61)")}
+    </div>
+
+    <div class="row my-5">
+      <div class="col-md-6 mx-auto">
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-dark text-white text-center fw-bold rounded-top">🏅 Worst Ranking HSA KPI IOAN B2C</div>
+          <div class="card-body">
+            <table class="table table-sm table-borderless text-center align-middle">
+              <thead class="table-secondary">
+                <tr><th>HSA</th><th>ACH (%)</th><th>🏆</th></tr>
+              </thead>
+              <tbody>${getHsaRanking()}</tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
-    <h5 class="text-center">Worst Ranking HSA KPI IOAN B2C</h5>
-    <table class="table table-sm table-bordered text-center w-50 mx-auto">
-      <thead class="table-dark"><tr><th>HSA</th><th>REAL</th><th>ACH KPI</th></tr></thead>
-      <tbody>${getHsaRanking("best")}</tbody>
-    </table>
-
-    <h5 class="text-center mt-4">Best STO KPI IOAN B2C</h5>
-    <table class="table table-sm table-bordered text-center w-75 mx-auto">
-      <thead class="table-dark"><tr><th>STO</th><th>HSA</th><th>REAL</th></tr></thead>
-      <tbody>${getStoRanking()}</tbody>
-    </table>
+    <div class="row mb-5">
+      <div class="col-md-8 mx-auto">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-success text-white text-center fw-bold rounded-top">⭐ Top STO KPI IOAN B2C</div>
+          <div class="card-body">
+            <table class="table table-sm table-striped text-center align-middle">
+              <thead class="table-light">
+                <tr><th>STO</th><th>HSA</th><th>ACH (%)</th></tr>
+              </thead>
+              <tbody>${getStoRanking()}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   `;
 }
+
+
 function loadAsgarIoan() {
   showLoading();
   document.getElementById("headerSection").style.display = "none";
