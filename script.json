@@ -380,6 +380,11 @@ function doGet(e) {
     laporan3: sheet.getRange("A66:D94").getValues()
   })).setMimeType(ContentService.MimeType.JSON);
 
+    } else if (kategori === 'laporan acceptance') {
+  const sheet = SpreadsheetApp.openById('1MiZqsr6BbhfAbKQm52ULpAMfirx8R7vcxGRY7_djXbU').getSheetByName('Acceptance');
+  const values = sheet.getRange("A1:D14").getValues();
+  return ContentService.createTextOutput(JSON.stringify(values)).setMimeType(ContentService.MimeType.JSON);
+
 }
   return ContentService
     .createTextOutput(JSON.stringify(data))
