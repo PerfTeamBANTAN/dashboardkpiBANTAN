@@ -371,10 +371,20 @@ function doGet(e) {
     }))
     .setMimeType(ContentService.MimeType.JSON);
 
+    } else if (kategori === 'laporan wa') {
+  const ss = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY');
+  const sheet = ss.getSheetByName('LAPORAN WA');
+  return ContentService.createTextOutput(JSON.stringify({
+    laporan1: sheet.getRange("A1:F27").getValues(),
+    laporan2: sheet.getRange("A30:H60").getValues(),
+    laporan3: sheet.getRange("A66:D94").getValues()
+  })).setMimeType(ContentService.MimeType.JSON);
+
 }
   return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
 
-
+  
 }
+
