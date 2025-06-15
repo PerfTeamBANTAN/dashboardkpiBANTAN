@@ -2216,48 +2216,49 @@ function loadLaporanWA() {
   showLoading();
   document.getElementById('headerSection').style.display = 'none';
 
-  fetch(`${scriptURL}?kategori=laporan wa`)
-    .then(response => response.json())
-    .then(data => {
-      hideLoading();
+  Promise.all([
+    fetch(`${scriptURL}?kategori=laporan wa`).then(res => res.json()),
+    fetch(`${scriptURL}?kategori=laporan acceptance`).then(res => res.json())
+  ])
+  .then(([data, acceptance]) => {
+    hideLoading();
 
-      const container = document.getElementById("dashboardContent");
-      const text1 = formatLaporanGridText(data.laporan1, "📌 *LAPORAN 1*");
-      const text2 = formatLaporanGridText(data.laporan2, "📊 *LAPORAN 2*");
-      const text3 = formatLaporanGridText(data.laporan3, "📝 *LAPORAN 3*");
+    const container = document.getElementById("dashboardContent");
+    const text1 = formatLaporanGridText(data.laporan1, "📌 *LAPORAN 1*");
+    const text2 = formatLaporanGridText(data.laporan2, "📊 *LAPORAN 2*");
+    const text3 = formatLaporanGridText(data.laporan3, "📝 *LAPORAN 3*");
+    const text4 = formatLaporanWithSlashes(acceptance, "📦 *LAPORAN 4: ACCEPTANCE*");
 
-      container.innerHTML = `
-        <h4 class="text-center mb-4 fw-bold">📩 Laporan WA Team</h4>
-        ${renderLaporanCard("Laporan 1", text1, "primary")}
-        ${renderLaporanCard("Laporan 2", text2, "success")}
-        ${renderLaporanCard("Laporan 3", text3, "info")}
-        <div class="text-center mt-3">
-          <button class="btn btn-outline-dark fw-bold salin-semua">📋 Salin Semua Laporan</button>
-        </div>
-      `;
+    container.innerHTML = `
+      <h4 class="text-center mb-4 fw-bold">📩 Laporan WA Team</h4>
+      ${renderLaporanCard("Laporan 1", text1, "primary")}
+      ${renderLaporanCard("Laporan 2", text2, "success")}
+      ${renderLaporanCard("Laporan 3", text3, "info")}
+      ${renderLaporanCard("Laporan 4", text4, "warning")}
+      <div class="text-center mt-3">
+        <button class="btn btn-outline-dark fw-bold salin-semua">📋 Salin Semua Laporan</button>
+      </div>
+    `;
 
-      // Inisialisasi toast setelah DOM terisi
-      initBootstrapToasts();
+    initBootstrapToasts();
 
-      // Event salin individual
-      document.querySelectorAll(".salin-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const id = btn.getAttribute("data-target");
-          const teks = document.getElementById(id).innerText;
-          salinKeClipboard(teks);
-        });
+    document.querySelectorAll(".salin-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-target");
+        const teks = document.getElementById(id).innerText;
+        salinKeClipboard(teks);
       });
-
-      // Event salin semua
-      document.querySelector(".salin-semua").addEventListener("click", () => {
-        salinKeClipboard(`${text1}\n\n${text2}\n\n${text3}`);
-      });
-    })
-    .catch(err => {
-      hideLoading();
-      console.error("Gagal muat Laporan WA:", err);
-      document.getElementById("dashboardContent").innerHTML = '<p class="text-danger text-center">Gagal memuat Laporan WA.</p>';
     });
+
+    document.querySelector(".salin-semua").addEventListener("click", () => {
+      salinKeClipboard(`${text1}\n\n${text2}\n\n${text3}\n\n${text4}`);
+    });
+  })
+  .catch(err => {
+    hideLoading();
+    console.error("Gagal muat laporan:", err);
+    document.getElementById("dashboardContent").innerHTML = '<p class="text-danger text-center">Gagal memuat laporan.</p>';
+  });
 }
 
 function renderLaporanCard(judul, teks, warna) {
@@ -2281,7 +2282,7 @@ function salinKeClipboard(teks) {
   const textarea = document.createElement("textarea");
   textarea.value = teks;
   textarea.setAttribute("readonly", "");
-  textarea.style.position = "fixed"; // hindari scroll ke textarea
+  textarea.style.position = "fixed";
   textarea.style.opacity = 0;
   document.body.appendChild(textarea);
   textarea.focus();
@@ -2307,7 +2308,6 @@ function showToast() {
   const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
   toast.show();
 }
-
 
 function initBootstrapToasts() {
   document.querySelectorAll('.toast').forEach(toastEl => {
@@ -2344,6 +2344,46 @@ function formatLaporanGridText(data, title) {
 
   return `${title}\n` + lines.join("\n");
 }
+
+function formatLaporanWithSlashes(data, title) {
+  if (!data || data.length === 0) return "";
+
+  // Buang baris kosong dari data
+  const cleanData = data.filter(row =>
+    row.some(cell => (cell ?? "").toString().trim() !== "")
+  );
+
+  const maxCols = Math.max(...cleanData.map(r => r.length));
+  const colWidths = Array(maxCols).fill(0);
+
+  // Hitung lebar kolom hanya dari baris data (bukan subjudul)
+  cleanData.forEach(row => {
+    const isSubjudul = row.length === 1 || (row[0] && typeof row[0] === "string" && row[0].startsWith("*"));
+    if (isSubjudul) return;
+    for (let i = 0; i < maxCols; i++) {
+      const val = formatCell(row[i] ?? "");
+      colWidths[i] = Math.max(colWidths[i], val.length);
+    }
+  });
+
+  // Format baris
+  const lines = cleanData.map(row => {
+    const isSubjudul = row.length === 1 || (row[0] && typeof row[0] === "string" && row[0].startsWith("*"));
+    if (isSubjudul) {
+      return formatCell(row[0]);
+    }
+
+    const paddedRow = [...row];
+    while (paddedRow.length < maxCols) paddedRow.push("");
+    return paddedRow.map((cell, i) => {
+      const val = formatCell(cell);
+      return val.padEnd(colWidths[i]);
+    }).join(" / ");
+  });
+
+  return `${title}\n` + lines.join("\n");
+}
+
 
 function formatCell(cell) {
   if (cell instanceof Date) return formatTanggal(cell);
