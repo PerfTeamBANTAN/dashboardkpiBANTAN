@@ -2438,10 +2438,13 @@ let treeData = {
   ]
 };
 
+const colors = ["#4d4dfc", "#38b000", "#f77f00", "#d62828", "#6a4c93", "#00b4d8", "#ff006e"];
+
 function renderTree(data) {
   const svg = d3.select("#treeSvg");
   svg.selectAll("*").remove();
-  const g = svg.append("g").attr("transform", "translate(40,40)");
+
+  const g = svg.append("g").attr("transform", "translate(60,60)");
   const root = d3.hierarchy(data);
   d3.tree().size([500, 1000])(root);
 
@@ -2450,7 +2453,7 @@ function renderTree(data) {
     .enter().append("path")
     .attr("class", "link")
     .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x))
-    .attr("stroke", "#ccc").attr("fill", "none");
+    .attr("fill", "none");
 
   const node = g.selectAll(".node")
     .data(root.descendants())
@@ -2458,28 +2461,76 @@ function renderTree(data) {
     .attr("class", "node")
     .attr("transform", d => `translate(${d.y},${d.x})`);
 
-  node.append("circle")
-    .attr("r", 6)
-    .attr("fill", "#4d4dfc")
+  // Click handling for single vs double
+  let clickTimer = null;
+
+  node.append("rect")
+    .attr("x", -60)
+    .attr("y", -15)
+    .attr("width", 120)
+    .attr("height", 30)
+    .attr("rx", 8)
+    .attr("fill", d => colors[d.depth % colors.length])
+    .attr("stroke", "#333")
+    .attr("stroke-width", 1.5)
+    .style("cursor", "pointer")
     .on("click", (e, d) => {
-      if (!d.data.children) d.data.children = [];
-      d.data.children.push({ name: "🆕 Cabang Baru" });
-      renderTree(treeData);
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+
+        // Double click = edit
+        const newName = prompt("Edit nama:", d.data.name);
+        if (newName) {
+          d.data.name = newName;
+          renderTree(treeData);
+        }
+      } else {
+        clickTimer = setTimeout(() => {
+          clickTimer = null;
+
+          // Single click = tambah anak
+          if (!d.data.children) d.data.children = [];
+          d.data.children.push({ name: "🆕 Cabang Baru" });
+          renderTree(treeData);
+        }, 250);
+      }
     });
 
   node.append("text")
-    .attr("dy", 4)
-    .attr("x", d => d.children ? -12 : 12)
-    .attr("text-anchor", d => d.children ? "end" : "start")
-    .text(d => d.data.name)
-    .on("dblclick", (e, d) => {
-      const newName = prompt("Edit nama:", d.data.name);
-      if (newName) {
-        d.data.name = newName;
-        renderTree(treeData);
-      }
+  .attr("dy", 5)
+  .attr("text-anchor", "middle")
+  .style("fill", "#fff")
+  .style("font-size", "12px")
+  .style("pointer-events", "none")
+  .each(function (d) {
+    const text = d3.select(this);
+    const name = d.data.name;
+    const maxLength = 18; // maksimal karakter
+
+    // Potong teks jika terlalu panjang
+    const displayedText = name.length > maxLength ? name.substring(0, maxLength - 1) + "…" : name;
+    text.text(displayedText);
+
+    // Tooltip untuk nama asli
+    text.append("title").text(name);
+  });
+
+  // ❌ Hapus cabang
+  node.filter(d => d.depth > 0).append("text")
+    .attr("x", 65)
+    .attr("y", -10)
+    .attr("font-size", "16px")
+    .attr("fill", "#ff3333")
+    .style("cursor", "pointer")
+    .text("❌")
+    .on("click", (event, d) => {
+      const parent = d.parent.data;
+      parent.children = parent.children.filter(child => child !== d.data);
+      renderTree(treeData);
     });
 }
+
 
 function exportMindmapToJSON() {
   const blob = new Blob([JSON.stringify(treeData, null, 2)], { type: "application/json" });
