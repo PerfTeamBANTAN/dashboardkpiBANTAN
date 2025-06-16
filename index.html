@@ -85,18 +85,22 @@
       font-size: 12px;
     }
     .tooltip-box {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.85);
-  color: white;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  max-width: 300px;
-  pointer-events: none;
-  display: none;
-  z-index: 9999;
-  white-space: pre-wrap;
-}
+    position: absolute;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    max-width: 300px;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 9999;
+    white-space: pre-wrap;
+
+    /* Transisi halus */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: translate(0, 0); /* untuk efek gerakan */
+    }
   </style>
   
 </head>
@@ -2524,30 +2528,42 @@ function renderTree(data) {
   const svg = d3.select("#treeSvg");
   svg.selectAll("*").remove();
 
-  const width = 1200;
-  const dx = 40;
-  const dy = 200;
+  const width = 1600;
+  const height = 1000;
+  const dx = 60;
+  const dy = 220;
 
-  svg.attr("width", width).attr("height", 800);
-  const g = svg.append("g").attr("transform", `translate(80,60)`);
+  svg.attr("width", width).attr("height", height);
+
+  const zoomG = svg.append("g").attr("transform", `translate(80,80)`);
+
+  const zoom = d3.zoom()
+    .scaleExtent([0.2, 2])
+    .on("zoom", (event) => {
+      zoomG.attr("transform", event.transform);
+    });
+
+  svg.call(zoom);
 
   const root = d3.hierarchy(data);
   const treeLayout = d3.tree().nodeSize([dx, dy]);
   treeLayout(root);
 
-  g.selectAll(".link")
+  // Garis antar node
+  zoomG.selectAll(".link")
     .data(root.links())
     .enter()
     .append("path")
     .attr("class", "link")
     .attr("d", d3.linkHorizontal()
       .x(d => d.y)
-      .y(d => d.x))
+      .y(d => d.x)
+    )
     .attr("fill", "none")
     .attr("stroke", "#ccc")
     .attr("stroke-width", 1.5);
 
-  const node = g.selectAll(".node")
+  const node = zoomG.selectAll(".node")
     .data(root.descendants())
     .enter()
     .append("g")
@@ -2557,24 +2573,24 @@ function renderTree(data) {
   const colors = ["#e74c3c", "#34495e", "#c0392b", "#8e44ad", "#16a085", "#2980b9"];
 
   node.append("rect")
-    .attr("x", -60)
-    .attr("y", -20)
-    .attr("width", 140)
-    .attr("height", 40)
-    .attr("rx", 10)
+    .attr("x", -70)
+    .attr("y", -25)
+    .attr("width", 160)
+    .attr("height", 50)
+    .attr("rx", 12)
     .attr("fill", d => colors[d.depth % colors.length])
     .attr("stroke", "#333")
     .attr("stroke-width", 1.5)
     .style("cursor", "pointer");
 
   node.append("foreignObject")
-    .attr("x", -55)
-    .attr("y", -15)
-    .attr("width", 130)
-    .attr("height", 30)
+    .attr("x", -65)
+    .attr("y", -20)
+    .attr("width", 150)
+    .attr("height", 40)
     .append("xhtml:div")
-    .style("width", "130px")
-    .style("height", "30px")
+    .style("width", "150px")
+    .style("height", "40px")
     .style("display", "flex")
     .style("align-items", "center")
     .style("justify-content", "center")
@@ -2585,34 +2601,12 @@ function renderTree(data) {
     .text(d => d.data.name);
 
   const tooltip = d3.select("#tooltip");
-  let clickTimer = null;
 
-  node.on("click", (event, d) => {
-    if (clickTimer) {
-      clearTimeout(clickTimer);
-      clickTimer = null;
-      const newName = prompt("Edit nama:", d.data.name);
-      if (newName && newName.trim()) {
-        d.data.name = newName.trim();
-        autoSaveToGitHub();
-        renderTree(treeData);
-      }
-    } else {
-      clickTimer = setTimeout(() => {
-        clickTimer = null;
-        if (!d.data.children) d.data.children = [];
-        d.data.children.push({ name: "🆕 Cabang Baru" });
-        autoSaveToGitHub();
-        renderTree(treeData);
-      }, 300);
-    }
-  });
-
+  // Tooltip on hover (halus)
   node.on("mousemove", (event, d) => {
     tooltip
       .style("opacity", 1)
-      .style("left", (event.pageX + 12) + "px")
-      .style("top", (event.pageY + 12) + "px")
+      .style("transform", `translate(${event.pageX + 15}px, ${event.pageY + 15}px)`)
       .html(`<strong>${d.data.name}</strong>`);
   });
 
@@ -2620,9 +2614,35 @@ function renderTree(data) {
     tooltip.style("opacity", 0);
   });
 
+  // Klik tunggal / ganda
+  let clickTimer = null;
+  node.on("click", (event, d) => {
+    if (clickTimer) {
+      clearTimeout(clickTimer);
+      clickTimer = null;
+
+      const newName = prompt("Edit nama:", d.data.name);
+      if (newName && newName.trim()) {
+        d.data.name = newName.trim();
+        saveToGitHub();
+        renderTree(treeData);
+      }
+    } else {
+      clickTimer = setTimeout(() => {
+        clickTimer = null;
+
+        if (!d.data.children) d.data.children = [];
+        d.data.children.push({ name: "🆕 Cabang Baru" });
+        saveToGitHub();
+        renderTree(treeData);
+      }, 300);
+    }
+  });
+
+  // ❌ tombol hapus node
   node.filter(d => d.depth > 0).append("text")
-    .attr("x", 70)
-    .attr("y", -10)
+    .attr("x", 80)
+    .attr("y", -12)
     .attr("font-size", "16px")
     .attr("fill", "#ff3333")
     .style("cursor", "pointer")
@@ -2631,10 +2651,11 @@ function renderTree(data) {
       event.stopPropagation();
       const parent = d.parent.data;
       parent.children = parent.children.filter(child => child !== d.data);
-      autoSaveToGitHub();
+      saveToGitHub();
       renderTree(treeData);
     });
 }
+
 
 function showUI() {
   document.getElementById("dashboardContent").innerHTML = `
