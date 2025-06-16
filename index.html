@@ -2479,28 +2479,43 @@ const GITHUB = {
   const svg = d3.select("#treeSvg");
   svg.selectAll("*").remove();
 
-  const tooltip = d3.select("#customTooltip");
+  const width = 1200;
+  const dx = 40;
+  const dy = 200;
 
-  const g = svg.append("g").attr("transform", "translate(60,60)");
+  svg.attr("width", width).attr("height", 800);
+  const g = svg.append("g").attr("transform", `translate(80,60)`);
+
   const root = d3.hierarchy(data);
-  d3.tree().size([500, 1000])(root);
+  const treeLayout = d3.tree().nodeSize([dx, dy]);
+  treeLayout(root);
 
+  // Garis antar node
   g.selectAll(".link")
     .data(root.links())
-    .enter().append("path")
+    .enter()
+    .append("path")
     .attr("class", "link")
-    .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x))
+    .attr("d", d3.linkHorizontal()
+      .x(d => d.y)
+      .y(d => d.x)
+    )
     .attr("fill", "none")
-    .attr("stroke", "#999");
+    .attr("stroke", "#ccc")
+    .attr("stroke-width", 1.5);
 
+  // Grup node
   const node = g.selectAll(".node")
     .data(root.descendants())
-    .enter().append("g")
+    .enter()
+    .append("g")
     .attr("class", "node")
     .attr("transform", d => `translate(${d.y},${d.x})`);
 
-  let clickTimer = null;
+  // Warna per level
+  const colors = ["#e74c3c", "#34495e", "#c0392b", "#8e44ad", "#16a085", "#2980b9"];
 
+  // Kotak node
   node.append("rect")
     .attr("x", -60)
     .attr("y", -20)
@@ -2512,7 +2527,7 @@ const GITHUB = {
     .attr("stroke-width", 1.5)
     .style("cursor", "pointer");
 
-  // Isi teks dalam foreignObject
+  // Teks dalam node
   node.append("foreignObject")
     .attr("x", -55)
     .attr("y", -15)
@@ -2528,30 +2543,19 @@ const GITHUB = {
     .style("font-size", "12px")
     .style("text-align", "center")
     .style("word-break", "break-word")
-    .html(d => {
-      const name = d.data.name;
-      const maxLength = 28;
-      return name.length > maxLength ? name.slice(0, maxLength - 1) + "…" : name;
-    })
-    .on("mouseover", (event, d) => {
-      tooltip.style("display", "block")
-        .html(d.data.name);
-    })
-    .on("mousemove", (event) => {
-      tooltip
-        .style("left", (event.pageX + 10) + "px")
-        .style("top", (event.pageY + 10) + "px");
-    })
-    .on("mouseout", () => {
-      tooltip.style("display", "none");
-    });
+    .text(d => d.data.name);
 
-  // Klik untuk tambah/edit
+  // Tooltip div
+  const tooltip = d3.select("#tooltip");
+
+  // Interaktif: klik tunggal → tambah anak, klik ganda → edit nama
+  let clickTimer = null;
   node.on("click", (event, d) => {
     if (clickTimer) {
       clearTimeout(clickTimer);
       clickTimer = null;
 
+      // Double click → Edit nama node
       const newName = prompt("Edit nama:", d.data.name);
       if (newName && newName.trim()) {
         d.data.name = newName.trim();
@@ -2561,6 +2565,8 @@ const GITHUB = {
     } else {
       clickTimer = setTimeout(() => {
         clickTimer = null;
+
+        // Single click → Tambah anak
         if (!d.data.children) d.data.children = [];
         d.data.children.push({ name: "🆕 Cabang Baru" });
         saveToGitHub();
@@ -2569,7 +2575,20 @@ const GITHUB = {
     }
   });
 
-  // Tombol ❌ hapus cabang
+  // Tooltip tampil saat hover
+  node.on("mousemove", (event, d) => {
+    tooltip
+      .style("opacity", 1)
+      .style("left", (event.pageX + 12) + "px")
+      .style("top", (event.pageY + 12) + "px")
+      .html(`<strong>${d.data.name}</strong>`);
+  });
+
+  node.on("mouseleave", () => {
+    tooltip.style("opacity", 0);
+  });
+
+  // Tombol hapus (❌)
   node.filter(d => d.depth > 0).append("text")
     .attr("x", 70)
     .attr("y", -10)
@@ -2578,13 +2597,14 @@ const GITHUB = {
     .style("cursor", "pointer")
     .text("❌")
     .on("click", (event, d) => {
-      event.stopPropagation();
+      event.stopPropagation(); // cegah klik node
       const parent = d.parent.data;
       parent.children = parent.children.filter(child => child !== d.data);
       saveToGitHub();
       renderTree(treeData);
     });
 }
+
 
     function saveToGitHub() {
   const json = JSON.stringify(treeData, null, 2);
