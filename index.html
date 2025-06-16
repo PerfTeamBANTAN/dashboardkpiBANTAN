@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,6 +84,7 @@
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Dashboard MSA</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Dashboard MAINTENANCE</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadLaporanWA()">Laporan WA</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadFormNotAch()">Input Indikator NOTACH</a></li>
             </ul>
           </li>
           <li class="nav-item dropdown">
@@ -2406,7 +2406,187 @@ function formatTanggalWaktuLengkap(tgl) {
     }).replace(",", "").replace("pukul", "pukul");
   } catch { return tgl; }
 }
+// --- List Indikator dan STO ---
+const indikatorList = {
+  "12 Pi Laten": ["TTRC Gamas Distribusi", "TTRC Gamas Feeder", "TTRC Gamas ODP", "TTRc 36H FBB", "PS/RE", "Latency RAN to Core", "MTTRi Critical", "Wifi Revitalization", "Underspec Waranty HSI", "TTRC K2,K1 Datin", "TTRD Non HSI", "Asgar Datin"],
+  "KPI IOAN B2C": ["Assurance guarantee All", "Service Availability (All Teknis)", "Q Gangguan (All Teknis)", "TTR COMP - 36JAM (Non HVC)", "TTR COMP - 3H HVC (D,V)", "TTR COMP - 3H Manja", "TTR COMP - 6H (P)", "TTR COMP - 12H (Gold)", "Tangible ODP (Kuantitas)", "Tangible ODP (Kualitas)", "Tangible ODC (Kuantitas)", "Tangible ODC (Kualitas)", "VALINS DC QR Code & Service", "VALINS Visit ODP", "Validasi ODC", "Validasi Connect ODP-OLT", "Validasi Tiang", "TTR Comply SQM 4H (Exclude tiket AWH)", "Unspec Non Warranty", "Closed SQM", "SCC Inet", "SCC Voice", "InfraCare - Tiket Close"],
+  "KPI Non Sektor B2B": ["Assurance Guarantee DATIN", "Assurance Guarantee HSI", "Assurance Guarantee WiFi", "Compliance Time to Recover IndiBiz-24 jam", "Compliance Time to Recover IndiBiz-4 jam", "Compliance Time to Recover IndiHome Reseller-36 jam", "Compliance Time to Recover IndiHome Reseller-6 jam", "MTTR DWDM", "MTTR SIP TRUNK", "Outstanding Saldo DATIN", "Outstanding Saldo HSI", "Q gangguan HSI", "Q gangguan DATIN", "Compliance K1 DATIN 1.5 Jam", "Compliance K2 dan K1 Repair DATIN 3.6 Jam", "Compliance K3 DATIN 7.2 Jam", "TTR Compliance WiFi", "Validasi Data EBIS (QR Code Service & Visit ODP)", "Repetitive Incidents (CNOP 3.0)", "Transport Service Availability Access (CNOP 3.0)", "MTTRi Critical Compliance (CNOP 3.0)", "MTTRi Low Compliance (CNOP 3.0)", "MTTRi Major Compliance (CNOP 3.0)", "MTTRi Minor Compliance (CNOP 3.0)", "MTTRi Premium Site Compliance (CNOP 3.0)", "Validasi Data Node B", "MTTR Datin Gamas (Down)", "MTTR Datin Non Gamas (Down)", "MTTR SL WDM (Down)", "TTR Compliance Datin", "TTR Compliance SL WDM", "MTTR Datin (Quality)", "ONM-WHO-MTTR SL WDM (Quality)", "Jitter RAN to Core", "Latency RAN to Core (Site Node B ke OLT)", "MTTRq RAN to Core Major", "MTTRq RAN to Core Minor", "Packet Loss RAN to Core", "Unspec Segmen Akses", "ONM-ALL-Service Availability-WiFi", "Validasi Data Wifi", "Underspec Wifi", "MTTR Gangguan WMS a. Tipe Priority 3", "MTTR Gangguan WMS b. Tipe Priority 2", "MTTR Gangguan WMS c. Tipe Priority 1", "MTTR Gangguan Basic a. Diluar jam kerja (17.00 s/d 08.00 H+1)", "MTTR Gangguan Basic b. Pada jam kerja (08.00 s/d 17.00)", "MTTR Gangguan non Fisik a. Tipe Priority 3 dan 4", "MTTR Gangguan non Fisik b. Tipe Priority 2", "MTTR Gangguan non Fisik c. Tipe Priority 1"],
+  "KPI WSA": [],
+  "KPI MSA": []
+};
 
+const stoList = {
+  "BANTEN": ["CKA", "TGR", "CSK", "TJO", "BLJ", "SAG", "KRS", "SEG", "KMT", "BRS", "CRS", "CKD", "BJT", "CLG", "MER", "BJO", "GRL", "PBN", "SAM", "CWN", "PSU", "PDG", "SKE", "LBU", "MEN", "RKS", "LWD", "MLP", "BAY"],
+  "TANGERANG": ["CPA", "SRH", "PKU", "CPD", "CKL", "PDR", "CLD", "SRP", "RMP", "LKG", "LGK", "PPG", "CUG", "GDS", "SPT", "TAN", "PSK", "RJG", "MUK", "KJO"]
+};
+
+function updateIndikatorOptions() {
+  const kpi = document.getElementById("kpi").value;
+  const indikatorSelect = document.getElementById("indikator");
+  indikatorSelect.innerHTML = '<option value="">Pilih Indikator</option>';
+
+  if (indikatorList[kpi]) {
+    indikatorList[kpi].forEach(i => {
+      indikatorSelect.innerHTML += `<option value="${i}">${i}</option>`;
+    });
+  }
+}
+
+function updateStoOptions() {
+  const witel = document.getElementById("witel").value;
+  const stoSelect = document.getElementById("sto");
+  stoSelect.innerHTML = '<option value="">Pilih STO</option>';
+
+  if (stoList[witel]) {
+    stoList[witel].forEach(s => {
+      stoSelect.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+  }
+}
+
+function handleSubmitNotach(e) {
+  e.preventDefault();
+
+  const fileInput = document.getElementById("evident");
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+
+  reader.onloadend = function () {
+    const base64 = file ? reader.result.split(",")[1] : "";
+    const data = {
+      timestamp: new Date().toLocaleString("id-ID"),
+      kpi: document.getElementById("kpi").value,
+      indikator: document.getElementById("indikator").value,
+      witel: document.getElementById("witel").value,
+      sto: document.getElementById("sto").value,
+      tiket: document.getElementById("tiket").value,
+      nd: document.getElementById("nd").value,
+      keterangan: document.getElementById("keterangan").value,
+      file: base64,
+      filename: file?.name || "",
+      mimeType: file?.type || "image/png"
+    };
+
+    fetch("https://script.google.com/macros/s/AKfycbwq85CIdDt06BPp4CayvtOwsjNcTuIAzzsfljN4gEa1m7PA74KbBC9RMmMk-ifltgf0/exec", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" }
+    })
+      .then(res => res.json())
+      .then(res => {
+        if (res.status === "success") {
+          alert("✅ Data dan Evident berhasil diupload");
+          document.getElementById("formNotach").reset();
+          loadNotachTable();
+        } else {
+          alert("❌ Gagal simpan data");
+        }
+      })
+      .catch(err => alert("❌ Error: " + err.message));
+  };
+
+  if (file) {
+    reader.readAsDataURL(file);
+  } else {
+    reader.onloadend();
+  }
+}
+
+function loadFormNotAch() {
+  document.getElementById("dashboardContent").innerHTML = `
+    <h4 class="text-center mb-3">📝 Input Indikator NOT ACH</h4>
+    <form id="formNotach" class="mb-4">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label for="kpi" class="form-label">KPI Not ACH</label>
+          <select class="form-select" id="kpi" required onchange="updateIndikatorOptions()">
+            <option value="">Pilih KPI</option>
+            <option value="12 Pi Laten">12 Pi Laten</option>
+            <option value="KPI IOAN B2C">KPI IOAN B2C</option>
+            <option value="KPI Non Sektor B2B">KPI Non Sektor B2B</option>
+            <option value="KPI WSA">KPI WSA</option>
+            <option value="KPI MSA">KPI MSA</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="indikator" class="form-label">Indikator NOT ACH</label>
+          <select class="form-select" id="indikator" required></select>
+        </div>
+        <div class="col-md-2">
+          <label for="witel" class="form-label">WITEL</label>
+          <select class="form-select" id="witel" required onchange="updateStoOptions()">
+            <option value="">Pilih</option>
+            <option value="BANTEN">BANTEN</option>
+            <option value="TANGERANG">TANGERANG</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="sto" class="form-label">STO</label>
+          <select class="form-select" id="sto" required></select>
+        </div>
+      </div>
+      <div class="row g-2 mt-2">
+        <div class="col-md-3">
+          <label for="tiket" class="form-label">TIKET</label>
+          <input type="text" class="form-control" id="tiket" required>
+        </div>
+        <div class="col-md-3">
+          <label for="nd" class="form-label">ND</label>
+          <input type="text" class="form-control" id="nd">
+        </div>
+        <div class="col-md-4">
+          <label for="keterangan" class="form-label">Keterangan</label>
+          <input type="text" class="form-control" id="keterangan">
+        </div>
+        <div class="col-md-2">
+          <label for="evident" class="form-label">Evident</label>
+          <input type="file" class="form-control" id="evident" accept="image/*">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary mt-3">Simpan</button>
+    </form>
+    <div id="notachTable"></div>
+  `;
+
+  document.getElementById("formNotach").addEventListener("submit", handleSubmitNotach);
+  loadNotachTable();
+}
+
+function loadNotachTable() {
+  fetch("https://script.google.com/macros/s/AKfycbwq85CIdDt06BPp4CayvtOwsjNcTuIAzzsfljN4gEa1m7PA74KbBC9RMmMk-ifltgf0/exec?kategori=data notach")
+    .then(res => res.json())
+    .then(data => {
+      if (!Array.isArray(data) || data.length === 0) {
+        document.getElementById("notachTable").innerHTML = "<p class='text-muted'>Belum ada data yang ditampilkan.</p>";
+        return;
+      }
+
+      let html = `<h5 class="mt-4">📋 Data Indikator NOTACH</h5><div class="table-responsive"><table class="table table-bordered table-sm table-striped"><thead class="table-dark"><tr>`;
+      const headers = Object.keys(data[0]);
+      headers.forEach(h => html += `<th>${h}</th>`);
+      html += `</tr></thead><tbody>`;
+
+      data.forEach(row => {
+        html += `<tr>`;
+        headers.forEach(h => {
+          const val = row[h] || "";
+          if (typeof val === "string" && val.startsWith("http")) {
+            html += `<td><a href="${val}" target="_blank">Lihat Evident</a></td>`;
+          } else {
+            html += `<td>${val}</td>`;
+          }
+        });
+        html += `</tr>`;
+      });
+
+      html += `</tbody></table></div>`;
+      document.getElementById("notachTable").innerHTML = html;
+    })
+    .catch(err => {
+      console.error("Error loading NOTACH data:", err);
+      document.getElementById("notachTable").innerHTML = "<p class='text-danger'>❌ Gagal memuat data.</p>";
+    });
+}
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
