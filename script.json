@@ -411,7 +411,7 @@ function doGet(e) {
 function doPost(e) {
   const SHEET_ID = '1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY';
   const SHEET_NAME = 'DATA NOTACH';
-  const FOLDER_ID = '13x4Po9DH-9HTdwE-DFBIaRwvVF3wPDvL';
+  const FOLDER_ID = 'GANTI_DENGAN_FOLDER_ID_DRIVE_KAMU';
   const ALLOWED_ORIGIN = 'https://perfteambantan.github.io';
 
   try {
@@ -443,15 +443,17 @@ function doPost(e) {
       fileUrl
     ]);
 
-    return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
-      .setMimeType(ContentService.MimeType.JSON)
+    return ContentService.createTextOutput($1)
+    .setMimeType(ContentService.MimeType.JSON)
+    .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
       .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
       .appendHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
       .appendHeader("Access-Control-Allow-Headers", "Content-Type");
 
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.message }))
-      .setMimeType(ContentService.MimeType.JSON)
+    return ContentService.createTextOutput($1)
+    .setMimeType(ContentService.MimeType.JSON)
+    .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
       .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
   }
 }
@@ -462,5 +464,6 @@ function doOptions(e) {
     .appendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
     .appendHeader("Access-Control-Allow-Headers", "Content-Type");
 }
+
 
 
