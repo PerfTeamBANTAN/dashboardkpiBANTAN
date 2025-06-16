@@ -1,127 +1,394 @@
-const SHEET_ID = '1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY';
-const SHEET_NAME = 'DATA NOTACH';
-const FOLDER_ID = '13x4Po9DH-9HTdwE-DFBIaRwvVF3wPDvL';
-const ALLOWED_ORIGIN = 'https://perfteambantan.github.io';
-
 function doGet(e) {
-  const kategori = (e.parameter.kategori || '').toLowerCase();
+  const kategori = (e.parameter.kategori || "").toLowerCase();
   let data = [];
 
   if (kategori === 'racing mitra') {
-    const values = SpreadsheetApp.openById(SHEET_ID).getSheetByName('RACING').getDataRange().getValues();
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('RACING');
+    const values = sheet.getDataRange().getValues();
     data = values.slice(1, 13).map(row => ({
-      nama: row[0], sektor: row[1], gms: row[2], zero: row[3], ach_zero: row[4],
-      pi12: row[5], ach_pi12: row[6], kpi: row[7], ach_kpi: row[8], tnps: row[9],
-      ach_tnps: row[10], psb: row[11], ach_psb: row[12], realisasi: row[13], rank: row[14]
+      nama: row[0],
+      sektor: row[1],
+      gms: row[2],
+      zero: row[3],
+      ach_zero: row[4],
+      pi12: row[5],
+      ach_pi12: row[6],
+      kpi: row[7],
+      ach_kpi: row[8],
+      tnps: row[9],
+      ach_tnps: row[10],
+      psb: row[11],
+      ach_psb: row[12],
+      realisasi: row[13],
+      rank: row[14]
     }));
 
   } else if (kategori === 'racing hsa') {
-    const values = SpreadsheetApp.openById(SHEET_ID).getSheetByName('RACING').getDataRange().getValues();
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('RACING');
+    const values = sheet.getDataRange().getValues();
     data = values.slice(14, 23).map(row => ({
-      nama: row[0], sektor: row[1], gms: row[2], zero: row[3], ach_zero: row[4],
-      pi12: row[5], ach_pi12: row[6], kpi: row[7], ach_kpi: row[8], tnps: row[9],
-      ach_tnps: row[10], psb: row[11], ach_psb: row[12], realisasi: row[13], rank: row[14]
+      nama: row[0],
+      sektor: row[1],
+      gms: row[2],
+      zero: row[3],
+      ach_zero: row[4],
+      pi12: row[5],
+      ach_pi12: row[6],
+      kpi: row[7],
+      ach_kpi: row[8],
+      tnps: row[9],
+      ach_tnps: row[10],
+      psb: row[11],
+      ach_psb: row[12],
+      realisasi: row[13],
+      rank: row[14]
     }));
 
-  } else if (kategori === '12 pi laten' || kategori === 'dashboard ioan b2c' || kategori === 'asgar ioan' || kategori === 'data notach') {
-    const sheetName = kategori === '12 pi laten' ? '12 PI LATEN'
-                    : kategori === 'dashboard ioan b2c' ? 'KPI B2C'
-                    : kategori === 'asgar ioan' ? 'ASGAR IOAN'
-                    : 'DATA NOTACH';
-    const values = SpreadsheetApp.openById(SHEET_ID).getSheetByName(sheetName).getDataRange().getValues();
+  } else if (kategori === '12 pi laten') {
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('12 PI LATEN');
+    const values = sheet.getDataRange().getValues();
     const headers = values[0];
-    data = values.slice(1).map(row => {
+    const body = values.slice(1);
+    data = body.map(row => {
       let obj = {};
       headers.forEach((h, i) => obj[h] = row[i]);
       return obj;
     });
 
-  } else if (kategori === 'underspec') {
-    const values = SpreadsheetApp.openById(SHEET_ID).getSheetByName('UNSPEC').getDataRange().getValues();
+  } else if (kategori === 'dashboard ioan b2c') {
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('KPI B2C');
+    const values = sheet.getDataRange().getValues();
     const headers = values[0];
     const body = values.slice(1);
-    const tangerang = [], banten = [];
-    let mode = 'tangerang';
-    body.forEach(row => {
-      const territory = (row[0] || '').toString().trim().toUpperCase();
-      if (territory === 'BANTEN') mode = 'banten';
-      (mode === 'tangerang' ? tangerang : banten).push(row);
+    data = body.map(row => {
+      let obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      return obj;
     });
-    data = { headers, tangerang, banten };
+    
+   } else if (kategori === 'asgar ioan') {
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('ASGAR IOAN');
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0];
+    const body = values.slice(1);
+    data = body.map(row => {
+      let obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      return obj;
+    });
+  
+  } else if (kategori === 'ttr') {
+    const sheet = SpreadsheetApp
+      .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+      .getSheetByName('TTR'); // pastikan ini nama sheet yang benar
+    const values = sheet.getDataRange().getValues();
 
-  } else if (kategori === 'scc') {
-    data = SpreadsheetApp.openById(SHEET_ID).getSheetByName('SCC').getRange(3, 1, SpreadsheetApp.openById(SHEET_ID).getSheetByName('SCC').getLastRow() - 2, 10).getValues();
+    const result = [];
+    let i = 0;
 
-  } else if (kategori === 'tangible') {
-    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('TANGIBLE');
-    data = {
-      data_tangerang: sheet.getRange('A6:R33').getValues(),
-      data_banten: sheet.getRange('A40:R51').getValues(),
-      total_tangerang: sheet.getRange('A4:R4').getValues()[0],
-      total_banten: sheet.getRange('A38:R38').getValues()[0]
-    };
+    while (i < values.length) {
+      const row = values[i];
 
-  } else if (kategori === 'laporan wa') {
-    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('LAPORAN WA');
-    data = {
-      laporan1: sheet.getRange('A1:F27').getValues(),
-      laporan2: sheet.getRange('A30:H60').getValues(),
-      laporan3: sheet.getRange('A66:D94').getValues()
-    };
+      if (row[0] && row[0].toString().toUpperCase().startsWith("TTR COMP")) {
+        const title = row[0].toString().trim();
+        const headers = values[i + 1];
+        const witelRows = [];
+        const stoRows = [];
 
-  } else if (kategori === 'laporan acceptance') {
-    data = SpreadsheetApp.openById('1MiZqsr6BbhfAbKQm52ULpAMfirx8R7vcxGRY7_djXbU').getSheetByName('Acceptance').getRange('A1:D14').getValues();
-  }
+        i += 2;
 
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON)
-    .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
-    .appendHeader("Access-Control-Allow-Methods", "GET, OPTIONS")
-    .appendHeader("Access-Control-Allow-Headers", "Content-Type");
-}
+        while (i < values.length && values[i][0] && values[i][0].toString().trim() !== "") {
+          witelRows.push(values[i]);
+          i++;
+        }
 
-function doPost(e) {
-  const responseHeaders = {
-    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
-  };
+        while (i < values.length && (!values[i][0] || values[i][0].toString().trim() === "")) {
+          i++;
+        }
 
-  try {
-    const data = JSON.parse(e.postData.contents || '{}');
-    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
-    let fileUrl = '';
+        while (i < values.length && values[i][0] && !values[i][0].toString().toUpperCase().startsWith("TTR COMP")) {
+          stoRows.push(values[i]);
+          i++;
+        }
 
-    if (data.file && data.filename) {
-      const blob = Utilities.base64Decode(data.file);
-      const fileBlob = Utilities.newBlob(blob, data.mimeType, data.filename);
-      const folder = DriveApp.getFolderById(FOLDER_ID);
-      const uploaded = folder.createFile(fileBlob);
-      uploaded.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      fileUrl = uploaded.getUrl();
+        result.push({
+          title: title,
+          witel: {
+            headers: headers,
+            rows: witelRows
+          },
+          sto: {
+            headers: headers,
+            rows: stoRows
+          }
+        });
+      } else {
+        i++;
+      }
     }
 
-    sheet.appendRow([
-      data.timestamp, data.kpi, data.indikator, data.witel, data.sto,
-      data.tiket, data.nd, data.keterangan, fileUrl
-    ]);
+    // ✅ FINAL return khusus untuk TTR
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
 
-    return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeaders(responseHeaders);
+  
+  } else if (kategori === 'racing ioan mitra') {
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('IOAN MITRA');
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0];
+    const body = values.slice(1, 30);
+    const rankingRow = values[30] || [];
 
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.message }))
-      .setMimeType(ContentService.MimeType.JSON)
-      .setHeaders(responseHeaders);
-  }
-}
+    const finalData = [...body];
+    if (rankingRow.length && rankingRow[0].toString().toLowerCase().includes('ranking')) {
+      finalData.push(rankingRow);
+    }
 
-function doOptions(e) {
-  return ContentService.createTextOutput('')
-    .setHeaders({
-      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
+    finalData.unshift(headers);
+    return ContentService
+      .createTextOutput(JSON.stringify(finalData))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } else if (kategori === 'underspec') {
+  const sheet = SpreadsheetApp
+    .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+    .getSheetByName('UNSPEC');
+  const values = sheet.getDataRange().getValues();
+
+  const headers = values[0];
+  const body = values.slice(1);
+
+  const tangerang = [];
+  const banten = [];
+
+  let mode = 'tangerang';
+
+  body.forEach(row => {
+    const territory = (row[0] || "").toString().trim().toUpperCase();
+
+    if (territory === "BANTEN") {
+      mode = 'banten';
+    }
+
+    if (mode === 'tangerang') {
+      tangerang.push(row);
+    } else {
+      banten.push(row);
+    }
+  });
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ headers, tangerang, banten }))
+    .setMimeType(ContentService.MimeType.JSON);
+
+  } else if (kategori === 'scc') {
+  const sheet = SpreadsheetApp
+    .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+    .getSheetByName('SCC');
+  const values = sheet.getRange(3, 1, sheet.getLastRow() - 2, 10).getValues(); // Mulai dari baris ke-3, 10 kolom
+
+  return ContentService
+    .createTextOutput(JSON.stringify(values))
+    .setMimeType(ContentService.MimeType.JSON);
+
+  } else if (kategori === 'service availability') {
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('SERVICE AVAILABILITY');
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0];
+    const bulanSekarang = Utilities.formatDate(new Date(), "GMT+7", "MMM ''yy");
+    const indexBulan = headers.indexOf(bulanSekarang);
+    const indexAVG = headers.indexOf("AVG");
+    const targetRow = values.find(row => (row[0] || "").toString().trim().toUpperCase() === "TARGET");
+
+    const summary = [];
+    const tabel = [headers];
+
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      if ((row[0] || "").toString().trim().toUpperCase() === "TARGET") continue;
+
+      summary.push({
+        wilayah: (row[0] || "").toString().trim(),
+        bulan: bulanSekarang,
+        nilai: indexBulan >= 0 ? parseFloat(row[indexBulan]) : null,
+        avg: indexAVG >= 0 ? parseFloat(row[indexAVG]) : null,
+        target: indexBulan >= 0 && targetRow ? parseFloat(targetRow[indexBulan]) : null
+      });
+
+      tabel.push(row);
+    }
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ summary, tabel }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+ 
+
+  } else if (kategori === 'tiket b2c') {
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('TIKET B2C');
+    const values = sheet.getDataRange().getValues();
+    return ContentService
+      .createTextOutput(JSON.stringify(values))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } else if (kategori === 'summary tiket b2c') {
+  const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('TIKET B2C');
+  const values = sheet.getDataRange().getValues();
+  const now = new Date();
+
+  const dataMap = {};
+
+  values.slice(1).forEach(row => {
+    const witel = (row[8] || "").toString().trim().toUpperCase(); // kolom I
+    const sto = (row[9] || "").toString().trim().toUpperCase(); // kolom J
+    const incident = row[0];
+    const reported = new Date(row[3]); // kolom D
+    const booking = new Date(row[17]); // kolom R
+    const gaul = (row[80] || "").toString().toUpperCase(); // kolom CD
+    const hvc = (row[81] || "").toString().toUpperCase(); // kolom CE
+    const custType = (row[24] || "").toString().toUpperCase(); // kolom Y
+    const manja = (row[96] || "").toString().toUpperCase(); // kolom CT
+
+    const key = `${witel}|${sto}`;
+    if (!dataMap[key]) {
+      dataMap[key] = {
+        witel, sto,
+        q_all: 0,
+        q_hvc: 0,
+        asgar_all: 0,
+        asgar_hvc: 0,
+        ttr_d_vvip: [0,0,0,0],
+        ttr_platinum: [0,0,0,0],
+        ttr_manja: [0,0,0,0],
+        ttr_gold: [0,0,0,0],
+        ttr_36jam: [0,0,0,0]
+      };
+    }
+
+    const item = dataMap[key];
+    item.q_all++;
+
+    if (hvc === "HVC") item.q_hvc++;
+    if (gaul === "GAUL") item.asgar_all++;
+    if (gaul === "GAUL" && hvc === "HVC") item.asgar_hvc++;
+
+    const minutes = (d1, d2) => Math.floor((d1 - d2) / 60000);
+
+    // SLA Rules
+    const repDiff = minutes(now, reported);
+    const bookDiff = minutes(now, booking);
+
+    if (["DIAMOND", "VVIP"].includes(custType)) {
+      if (repDiff < 60) item.ttr_d_vvip[0]++;
+      else if (repDiff < 120) item.ttr_d_vvip[1]++;
+      else if (repDiff < 180) item.ttr_d_vvip[2]++;
+      else item.ttr_d_vvip[3]++;
+    }
+
+    if (custType === "PLATINUM") {
+      if (repDiff < 60) item.ttr_platinum[0]++;
+      else if (repDiff < 180) item.ttr_platinum[1]++;
+      else if (repDiff < 360) item.ttr_platinum[2]++;
+      else item.ttr_platinum[3]++;
+    }
+
+    if (custType === "GOLD") {
+      if (repDiff < 240) item.ttr_gold[0]++;
+      else if (repDiff < 480) item.ttr_gold[1]++;
+      else if (repDiff < 720) item.ttr_gold[2]++;
+      else item.ttr_gold[3]++;
+    }
+
+    if (manja === "Y") {
+      if (bookDiff < 60) item.ttr_manja[0]++;
+      else if (bookDiff < 120) item.ttr_manja[1]++;
+      else if (bookDiff < 180) item.ttr_manja[2]++;
+      else item.ttr_manja[3]++;
+    }
+
+    if (repDiff < 720) item.ttr_36jam[0]++;
+    else if (repDiff < 1440) item.ttr_36jam[1]++;
+    else if (repDiff < 2160) item.ttr_36jam[2]++;
+    else item.ttr_36jam[3]++;
+  });
+
+  const result = Object.values(dataMap);
+  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+	
+	} else if (kategori === 'detail ttr retail') {
+    const sheet = SpreadsheetApp
+      .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+      .getSheetByName('DETAIL TTR RETAIL');
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0];
+    const body = values.slice(1);
+
+    const data = body.map(row => {
+      let obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      return obj;
     });
+
+    return ContentService
+      .createTextOutput(JSON.stringify(data))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } else if (kategori === 'detail ttr reseller') {
+    const sheet = SpreadsheetApp
+      .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+      .getSheetByName('DETAIL TTR RESELLER');
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0];
+    const body = values.slice(1);
+
+    const data = body.map(row => {
+      let obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      return obj;
+    });
+
+    return ContentService
+      .createTextOutput(JSON.stringify(data))
+      .setMimeType(ContentService.MimeType.JSON);
+
+		} else if (kategori === 'tangible') {
+  const sheet = SpreadsheetApp
+    .openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+    .getSheetByName('TANGIBLE');
+
+  const dataTangerang = sheet.getRange("A6:R33").getValues();
+  const dataBanten = sheet.getRange("A40:R51").getValues();
+  const totalTangerang = sheet.getRange("A4:R4").getValues()[0]; // 18 kolom
+  const totalBanten = sheet.getRange("A38:R38").getValues()[0];     // 18 kolom
+
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      data_tangerang: dataTangerang,
+      data_banten: dataBanten,
+      total_tangerang: totalTangerang,
+      total_banten: totalBanten
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+
+    } else if (kategori === 'laporan wa') {
+  const ss = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY');
+  const sheet = ss.getSheetByName('LAPORAN WA');
+  return ContentService.createTextOutput(JSON.stringify({
+    laporan1: sheet.getRange("A1:F27").getValues(),
+    laporan2: sheet.getRange("A30:H60").getValues(),
+    laporan3: sheet.getRange("A66:D94").getValues()
+  })).setMimeType(ContentService.MimeType.JSON);
+
+    } else if (kategori === 'laporan acceptance') {
+  const sheet = SpreadsheetApp.openById('1MiZqsr6BbhfAbKQm52ULpAMfirx8R7vcxGRY7_djXbU').getSheetByName('Acceptance');
+  const values = sheet.getRange("A1:D14").getValues();
+  return ContentService.createTextOutput(JSON.stringify(values)).setMimeType(ContentService.MimeType.JSON);
+
+}
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+
+  
 }
