@@ -2451,6 +2451,16 @@ let treeData = {
     ]
   };
 
+  // Cek localStorage
+  const savedTree = localStorage.getItem("notach_mindmap");
+  if (savedTree) {
+    treeData = JSON.parse(savedTree);
+  }
+
+  function saveTreeData() {
+    localStorage.setItem("notach_mindmap", JSON.stringify(treeData));
+  }
+
   const colors = ["#E62814", "#5B4F4D", "#6A5452", "#d62828", "#6a4c93", "#00b4d8", "#ff006e", "#962629e", "#6F2498", "#D8D303"];
 
   function renderTree(data) {
@@ -2491,24 +2501,24 @@ let treeData = {
         if (clickTimer) {
           clearTimeout(clickTimer);
           clickTimer = null;
-
           const newName = prompt("Edit nama:", d.data.name);
           if (newName) {
             d.data.name = newName;
+            saveTreeData();
             renderTree(treeData);
           }
         } else {
           clickTimer = setTimeout(() => {
             clickTimer = null;
-
             if (!d.data.children) d.data.children = [];
             d.data.children.push({ name: "🆕 Cabang Baru" });
+            saveTreeData();
             renderTree(treeData);
           }, 250);
         }
       });
 
-    // Multi-line text + Tooltip
+    // Teks multi-baris + tooltip
     node.each(function(d) {
       const g = d3.select(this);
       const name = d.data.name;
@@ -2536,7 +2546,6 @@ let treeData = {
           .text(line);
       });
 
-      // Tooltip detail (HTML via foreignObject)
       g.append("foreignObject")
         .attr("x", -80)
         .attr("y", -60)
@@ -2555,7 +2564,7 @@ let treeData = {
       });
     });
 
-    // Tombol hapus ❌
+    // ❌ tombol hapus
     node.filter(d => d.depth > 0).append("text")
       .attr("x", 75)
       .attr("y", -12)
@@ -2566,6 +2575,7 @@ let treeData = {
       .on("click", (event, d) => {
         const parent = d.parent.data;
         parent.children = parent.children.filter(child => child !== d.data);
+        saveTreeData();
         renderTree(treeData);
       });
   }
@@ -2589,43 +2599,59 @@ let treeData = {
     });
   }
 
+  function resetMindmap() {
+    if (confirm("Yakin ingin menghapus semua data mindmap dan mulai ulang?")) {
+      localStorage.removeItem("notach_mindmap");
+      location.reload();
+    }
+  }
+
   renderTree(treeData);
+
 
 function loadMindmapNotach() {
   showLoading();
   document.getElementById('headerSection').style.display = 'none';
+
   setTimeout(() => {
     hideLoading();
+
+    // Cek localStorage
+    const savedTree = localStorage.getItem("notach_mindmap");
+    if (savedTree) {
+      treeData = JSON.parse(savedTree);
+    }
+
     const container = document.getElementById("dashboardContent");
     container.innerHTML = `
-    <div class="container my-4">
-  <h4 class="text-center mb-4 text-primary fw-bold animate__animated animate__fadeInDown">
-    🧠 Mind Map Problem Solving - District BANTEN
-  </h4>
-  <div class="card shadow-lg border-0 animate__animated animate__zoomIn">
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
-        <div>
-          <button class="btn btn-outline-secondary btn-sm" onclick="goBackToMenu()">🔄 Refresh Mindmap</button>
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-outline-success btn-sm" onclick="exportMindmapToJSON()">💾 Simpan JSON</button>
-          <button class="btn btn-outline-danger btn-sm" onclick="exportToPNG()">🖼️ Export PNG</button>
+      <div class="container my-4">
+        <h4 class="text-center mb-4 text-primary fw-bold animate__animated animate__fadeInDown">
+          🧠 Mind Map Problem Solving - District BANTEN
+        </h4>
+        <div class="card shadow-lg border-0 animate__animated animate__zoomIn">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
+              <div>
+                <button class="btn btn-outline-secondary btn-sm" onclick="renderTree(treeData)">🔄 Refresh Mindmap</button>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-success btn-sm" onclick="exportMindmapToJSON()">💾 Simpan JSON</button>
+                <button class="btn btn-outline-danger btn-sm" onclick="exportToPNG()">🖼️ Export PNG</button>
+                <button class="btn btn-outline-dark btn-sm" onclick="resetMindmap()">🗑️ Reset Mindmap</button>
+              </div>
+            </div>
+            <div class="bg-light rounded shadow-sm p-3 overflow-auto border" style="min-height: 500px;">
+              <svg id="treeSvg" width="100%" height="600"></svg>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="bg-light rounded shadow-sm p-3 overflow-auto border" style="min-height: 500px;">
-        <svg id="treeSvg" width="100%" height="600"></svg>
-      </div>
-    </div>
-  </div>
-</div>
     `;
+
     renderTree(treeData);
   }, 400);
 }
-function goBackToMenu() {
-  renderTree(treeData); // Refresh tampilan mindmap tanpa reload halaman
-}
+
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
