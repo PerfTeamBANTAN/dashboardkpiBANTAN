@@ -412,12 +412,17 @@ function doGet(e) {
  * Handle POST request from input form
  */
 function doPost(e) {
+  const responseHeaders = {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
+
   try {
-    Logger.log(e);
     const data = JSON.parse(e.postData.contents || '{}');
     const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
 
-    // Upload Evident if file exists
+    // Upload file jika ada
     let fileUrl = '';
     if (data.file && data.filename) {
       const blob = Utilities.base64Decode(data.file);
@@ -428,7 +433,6 @@ function doPost(e) {
       fileUrl = uploaded.getUrl();
     }
 
-    // Append to Sheet
     sheet.appendRow([
       data.timestamp,
       data.kpi,
@@ -443,15 +447,12 @@ function doPost(e) {
 
     return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
       .setMimeType(ContentService.MimeType.JSON)
-      .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
-      .appendHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-      .appendHeader("Access-Control-Allow-Headers", "Content-Type");
+      .setHeaders(responseHeaders);
 
   } catch (err) {
-    Logger.log("ERROR: " + err.message);
     return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.message }))
       .setMimeType(ContentService.MimeType.JSON)
-      .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+      .setHeaders(responseHeaders);
   }
 }
 
@@ -460,9 +461,9 @@ function doPost(e) {
  */
 function doOptions(e) {
   return ContentService.createTextOutput('')
-    .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
-    .appendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-    .appendHeader("Access-Control-Allow-Headers", "Content-Type");
-}
-
+    .setHeaders({
+      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    });
 }
