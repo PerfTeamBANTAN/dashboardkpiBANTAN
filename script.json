@@ -385,6 +385,22 @@ function doGet(e) {
   const values = sheet.getRange("A1:D14").getValues();
   return ContentService.createTextOutput(JSON.stringify(values)).setMimeType(ContentService.MimeType.JSON);
 
+    } else if (kategori === 'data notach') {
+  const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
+    .getSheetByName('DATA NOTACH');
+  const values = sheet.getDataRange().getValues();
+  const headers = values[0];
+  const body = values.slice(1);
+
+  data = body.map(row => {
+    let obj = {};
+    headers.forEach((h, i) => obj[h] = row[i]);
+    return obj;
+  });
+
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+
 }
   return ContentService
     .createTextOutput(JSON.stringify(data))
