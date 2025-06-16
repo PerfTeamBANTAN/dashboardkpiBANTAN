@@ -397,16 +397,19 @@ function doGet(e) {
     const headers = values[0];
     const body = values.slice(1);
 
-    data = body.map(row => {
+    ata = body.map(row => {
       let obj = {};
       headers.forEach((h, i) => obj[h] = row[i]);
       return obj;
     });
   }
 
+  // ✅ Tambahkan CORS response headers untuk semua GET
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON)
-    .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+    .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
+    .appendHeader("Access-Control-Allow-Methods", "GET, OPTIONS")
+    .appendHeader("Access-Control-Allow-Headers", "Content-Type");
 
 /**
  * Handle POST request from input form
