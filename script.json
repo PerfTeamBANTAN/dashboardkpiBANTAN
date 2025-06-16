@@ -467,3 +467,5 @@ function doOptions(e) {
       "Access-Control-Allow-Headers": "Content-Type"
     });
 }
+
+}
