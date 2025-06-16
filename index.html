@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Team Performance</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -55,7 +56,30 @@
   }
     .card { border-radius: .75rem; }
   .card-header { font-size: 1.1rem; letter-spacing: 0.5px; }
-  table th, table td { vertical-align: middle; }
+  table th, table td { vertical-align: middle; 
+  }
+    .node circle {
+    fill: #6c5ce7;
+    stroke: white;
+    stroke-width: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .node circle:hover {
+    fill: #a29bfe;
+    r: 9;
+  }
+  .node text {
+    font: 14px 'Segoe UI', sans-serif;
+    cursor: text;
+    fill: #2d3436;
+    user-select: none;
+  }
+  .link {
+    fill: none;
+    stroke: #b2bec3;
+    stroke-width: 1.5px;
+  }
   </style>
   
 </head>
@@ -85,7 +109,7 @@
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Dashboard MSA</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Dashboard MAINTENANCE</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadLaporanWA()">Laporan WA</a></li>
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Input Indikator NOTACH</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadMindmapNotach()">Executive Report</a></li>
             </ul>
           </li>
           <li class="nav-item dropdown">
@@ -2357,7 +2381,7 @@ function formatLaporanWithSlashes(data, title) {
   const maxCols = Math.max(...cleanData.map(r => r.length));
   const colWidths = Array(maxCols).fill(0);
 
-  // Hitung lebar kolom hanya dari baris data (bukan subjudul)
+
   cleanData.forEach(row => {
     const isSubjudul = row.length === 1 || (row[0] && typeof row[0] === "string" && row[0].startsWith("*"));
     if (isSubjudul) return;
@@ -2367,7 +2391,7 @@ function formatLaporanWithSlashes(data, title) {
     }
   });
 
-  // Format baris
+  
   const lines = cleanData.map(row => {
     const isSubjudul = row.length === 1 || (row[0] && typeof row[0] === "string" && row[0].startsWith("*"));
     if (isSubjudul) {
@@ -2407,11 +2431,116 @@ function formatTanggalWaktuLengkap(tgl) {
     }).replace(",", "").replace("pukul", "pukul");
   } catch { return tgl; }
 }
+let treeData = {
+  name: "Input Indikator NOTACH",
+  children: [
+    { name: "Klik dua kali untuk edit", children: [] }
+  ]
+};
 
+function renderTree(data) {
+  const svg = d3.select("#treeSvg");
+  svg.selectAll("*").remove();
+  const g = svg.append("g").attr("transform", "translate(40,40)");
+  const root = d3.hierarchy(data);
+  d3.tree().size([500, 1000])(root);
+
+  g.selectAll(".link")
+    .data(root.links())
+    .enter().append("path")
+    .attr("class", "link")
+    .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x))
+    .attr("stroke", "#ccc").attr("fill", "none");
+
+  const node = g.selectAll(".node")
+    .data(root.descendants())
+    .enter().append("g")
+    .attr("class", "node")
+    .attr("transform", d => `translate(${d.y},${d.x})`);
+
+  node.append("circle")
+    .attr("r", 6)
+    .attr("fill", "#4d4dfc")
+    .on("click", (e, d) => {
+      if (!d.data.children) d.data.children = [];
+      d.data.children.push({ name: "🆕 Cabang Baru" });
+      renderTree(treeData);
+    });
+
+  node.append("text")
+    .attr("dy", 4)
+    .attr("x", d => d.children ? -12 : 12)
+    .attr("text-anchor", d => d.children ? "end" : "start")
+    .text(d => d.data.name)
+    .on("dblclick", (e, d) => {
+      const newName = prompt("Edit nama:", d.data.name);
+      if (newName) {
+        d.data.name = newName;
+        renderTree(treeData);
+      }
+    });
+}
+
+function exportMindmapToJSON() {
+  const blob = new Blob([JSON.stringify(treeData, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "mindmap-notach.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportToPNG() {
+  html2canvas(document.querySelector("#treeSvg")).then(canvas => {
+    const link = document.createElement("a");
+    link.download = "mindmap-notach.png";
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+}
+
+function loadMindmapNotach() {
+  showLoading();
+  document.getElementById('headerSection').style.display = 'none';
+  setTimeout(() => {
+    hideLoading();
+    const container = document.getElementById("dashboardContent");
+    container.innerHTML = `
+    <div class="container my-4">
+  <h4 class="text-center mb-4 text-primary fw-bold animate__animated animate__fadeInDown">
+    🧠 Mind Map Problem Solving - District BANTEN
+  </h4>
+  <div class="card shadow-lg border-0 animate__animated animate__zoomIn">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
+        <div>
+          <button class="btn btn-outline-secondary btn-sm" onclick="goBackToMenu()">🔄 Refresh Mindmap</button>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-success btn-sm" onclick="exportMindmapToJSON()">💾 Simpan JSON</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="exportToPNG()">🖼️ Export PNG</button>
+        </div>
+      </div>
+      <div class="bg-light rounded shadow-sm p-3 overflow-auto border" style="min-height: 500px;">
+        <svg id="treeSvg" width="100%" height="600"></svg>
+      </div>
+    </div>
+  </div>
+</div>
+    `;
+    renderTree(treeData);
+  }, 400);
+}
+function goBackToMenu() {
+  renderTree(treeData); // Refresh tampilan mindmap tanpa reload halaman
+}
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <div id="toastCopy" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
   <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
