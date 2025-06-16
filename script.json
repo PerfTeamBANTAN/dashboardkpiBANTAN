@@ -1,3 +1,9 @@
+const SHEET_ID = '1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY';
+const SHEET_NAME = 'DATA NOTACH';
+const FOLDER_ID = '13x4Po9DH-9HTdwE-DFBIaRwvVF3wPDvL'; // <-- ganti sesuai folder kamu
+const ALLOWED_ORIGIN = 'https://perfteambantan.github.io';
+
+
 function doGet(e) {
   const kategori = (e.parameter.kategori || "").toLowerCase();
   let data = [];
@@ -386,51 +392,43 @@ function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify(values)).setMimeType(ContentService.MimeType.JSON);
 
     } else if (kategori === 'data notach') {
-  const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY')
-    .getSheetByName('DATA NOTACH');
-  const values = sheet.getDataRange().getValues();
-  const headers = values[0];
-  const body = values.slice(1);
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+    const values = sheet.getDataRange().getValues();
+    const headers = values[0];
+    const body = values.slice(1);
 
-  data = body.map(row => {
-    let obj = {};
-    headers.forEach((h, i) => obj[h] = row[i]);
-    return obj;
-  });
+    data = body.map(row => {
+      let obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      return obj;
+    });
+  }
 
   return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON)
+    .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
 
-}
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-
-  
-}
+/**
+ * Handle POST request from input form
+ */
 function doPost(e) {
-  const SHEET_ID = '1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY';
-  const SHEET_NAME = 'DATA NOTACH';
-  const FOLDER_ID = 'GANTI_DENGAN_FOLDER_ID_DRIVE_KAMU';
-  const ALLOWED_ORIGIN = 'https://perfteambantan.github.io';
-
   try {
-    const data = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.openById(SHEET_ID);
-    const sheet = ss.getSheetByName(SHEET_NAME);
+    Logger.log(e);
+    const data = JSON.parse(e.postData.contents || '{}');
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
 
-    // Upload gambar jika ada
+    // Upload Evident if file exists
     let fileUrl = '';
     if (data.file && data.filename) {
       const blob = Utilities.base64Decode(data.file);
       const fileBlob = Utilities.newBlob(blob, data.mimeType, data.filename);
       const folder = DriveApp.getFolderById(FOLDER_ID);
-      const uploadedFile = folder.createFile(fileBlob);
-      uploadedFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      fileUrl = uploadedFile.getUrl();
+      const uploaded = folder.createFile(fileBlob);
+      uploaded.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      fileUrl = uploaded.getUrl();
     }
 
-    // Simpan data ke sheet
+    // Append to Sheet
     sheet.appendRow([
       data.timestamp,
       data.kpi,
@@ -443,27 +441,28 @@ function doPost(e) {
       fileUrl
     ]);
 
-    return ContentService.createTextOutput($1)
-    .setMimeType(ContentService.MimeType.JSON)
-    .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
+      .setMimeType(ContentService.MimeType.JSON)
       .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
       .appendHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
       .appendHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  } catch (error) {
-    return ContentService.createTextOutput($1)
-    .setMimeType(ContentService.MimeType.JSON)
-    .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
+  } catch (err) {
+    Logger.log("ERROR: " + err.message);
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.message }))
+      .setMimeType(ContentService.MimeType.JSON)
       .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
   }
 }
 
+/**
+ * Handle Preflight CORS
+ */
 function doOptions(e) {
-  return ContentService.createTextOutput("")
-    .appendHeader("Access-Control-Allow-Origin", "https://perfteambantan.github.io")
+  return ContentService.createTextOutput('')
+    .appendHeader("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
     .appendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
     .appendHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
-
-
+}
