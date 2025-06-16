@@ -85,18 +85,23 @@
       font-size: 12px;
     }
     .tooltip-box {
-      background: rgba(0, 0, 0, 0.85);
-      color: white;
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      max-width: 250px;
-      word-wrap: break-word;
-    }
+  position: absolute;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  max-width: 300px;
+  pointer-events: none;
+  display: none;
+  z-index: 9999;
+  white-space: pre-wrap;
+}
   </style>
   
 </head>
 <body>
+  <div id="customTooltip" class="tooltip-box"></div>
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
     <div class="container-fluid">
       <a class="navbar-brand" href="#"><img src="PERFORMANCE TEAM.png" style="height: 40px; margin-right: 10px;">PERFORMANCE BAN-TAN</a>
@@ -2474,11 +2479,12 @@ const GITHUB = {
   const svg = d3.select("#treeSvg");
   svg.selectAll("*").remove();
 
+  const tooltip = d3.select("#customTooltip");
+
   const g = svg.append("g").attr("transform", "translate(60,60)");
   const root = d3.hierarchy(data);
   d3.tree().size([500, 1000])(root);
 
-  // Garis antar node
   g.selectAll(".link")
     .data(root.links())
     .enter().append("path")
@@ -2487,14 +2493,12 @@ const GITHUB = {
     .attr("fill", "none")
     .attr("stroke", "#999");
 
-  // Grup node
   const node = g.selectAll(".node")
     .data(root.descendants())
     .enter().append("g")
     .attr("class", "node")
     .attr("transform", d => `translate(${d.y},${d.x})`);
 
-  // Deteksi klik tunggal/ganda
   let clickTimer = null;
 
   node.append("rect")
@@ -2508,6 +2512,7 @@ const GITHUB = {
     .attr("stroke-width", 1.5)
     .style("cursor", "pointer");
 
+  // Isi teks dalam foreignObject
   node.append("foreignObject")
     .attr("x", -55)
     .attr("y", -15)
@@ -2523,15 +2528,30 @@ const GITHUB = {
     .style("font-size", "12px")
     .style("text-align", "center")
     .style("word-break", "break-word")
-    .text(d => d.data.name);
+    .html(d => {
+      const name = d.data.name;
+      const maxLength = 28;
+      return name.length > maxLength ? name.slice(0, maxLength - 1) + "…" : name;
+    })
+    .on("mouseover", (event, d) => {
+      tooltip.style("display", "block")
+        .html(d.data.name);
+    })
+    .on("mousemove", (event) => {
+      tooltip
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY + 10) + "px");
+    })
+    .on("mouseout", () => {
+      tooltip.style("display", "none");
+    });
 
-  // Listener klik tunggal & ganda di <g> node
+  // Klik untuk tambah/edit
   node.on("click", (event, d) => {
     if (clickTimer) {
       clearTimeout(clickTimer);
       clickTimer = null;
 
-      // Double click → edit nama
       const newName = prompt("Edit nama:", d.data.name);
       if (newName && newName.trim()) {
         d.data.name = newName.trim();
@@ -2541,8 +2561,6 @@ const GITHUB = {
     } else {
       clickTimer = setTimeout(() => {
         clickTimer = null;
-
-        // Single click → tambah anak
         if (!d.data.children) d.data.children = [];
         d.data.children.push({ name: "🆕 Cabang Baru" });
         saveToGitHub();
@@ -2551,7 +2569,7 @@ const GITHUB = {
     }
   });
 
-  // Tombol hapus
+  // Tombol ❌ hapus cabang
   node.filter(d => d.depth > 0).append("text")
     .attr("x", 70)
     .attr("y", -10)
@@ -2560,7 +2578,7 @@ const GITHUB = {
     .style("cursor", "pointer")
     .text("❌")
     .on("click", (event, d) => {
-      event.stopPropagation(); // jangan ikut klik parent node
+      event.stopPropagation();
       const parent = d.parent.data;
       parent.children = parent.children.filter(child => child !== d.data);
       saveToGitHub();
