@@ -122,7 +122,7 @@
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Dashboard MSA</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Dashboard MAINTENANCE</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadLaporanWA()">Laporan WA</a></li>
-              <li><a class="dropdown-item" href="#" onclick="loadMindmapNotach()">Executive Report</a></li>
+              <li><a class="dropdown-item" href="#" onclick="loadMindmap()">Executive Report</a></li>
             </ul>
           </li>
           <li class="nav-item dropdown">
@@ -2444,213 +2444,210 @@ function formatTanggalWaktuLengkap(tgl) {
     }).replace(",", "").replace("pukul", "pukul");
   } catch { return tgl; }
 }
-let treeData = {
-    name: "Input Indikator NOTACH",
-    children: [
-      { name: "Klik dua kali untuk edit", children: [] }
-    ]
-  };
+const GITHUB = {
+      username: "PerfTeamBANTAN",
+      repo: "dashboardkpiBANTAN",
+      path: "data/mindmap-notach.json",
+      token: "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"
+    };
 
-  // Cek localStorage
-  const savedTree = localStorage.getItem("notach_mindmap");
-  if (savedTree) {
-    treeData = JSON.parse(savedTree);
-  }
+    let treeData = { name: "Loading...", children: [] };
+    const colors = ["#E62814","#5B4F4D","#6A5452","#d62828","#6a4c93","#00b4d8","#ff006e","#962629e","#6F2498","#D8D303"];
 
-  function saveTreeData() {
-    localStorage.setItem("notach_mindmap", JSON.stringify(treeData));
-  }
-
-  const colors = ["#E62814", "#5B4F4D", "#6A5452", "#d62828", "#6a4c93", "#00b4d8", "#ff006e", "#962629e", "#6F2498", "#D8D303"];
-
-  function renderTree(data) {
-    const svg = d3.select("#treeSvg");
-    svg.selectAll("*").remove();
-
-    const g = svg.append("g").attr("transform", "translate(60,60)");
-    const root = d3.hierarchy(data);
-    d3.tree().size([500, 1000])(root);
-
-    g.selectAll(".link")
-      .data(root.links())
-      .enter().append("path")
-      .attr("class", "link")
-      .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x))
-      .attr("fill", "none")
-      .attr("stroke", "#ccc");
-
-    const node = g.selectAll(".node")
-      .data(root.descendants())
-      .enter().append("g")
-      .attr("class", "node")
-      .attr("transform", d => `translate(${d.y},${d.x})`);
-
-    let clickTimer = null;
-
-    node.append("rect")
-      .attr("x", -70)
-      .attr("y", -20)
-      .attr("width", 140)
-      .attr("height", 40)
-      .attr("rx", 10)
-      .attr("fill", d => colors[d.depth % colors.length])
-      .attr("stroke", "#333")
-      .attr("stroke-width", 1.5)
-      .style("cursor", "pointer")
-      .on("click", (e, d) => {
-        if (clickTimer) {
-          clearTimeout(clickTimer);
-          clickTimer = null;
-          const newName = prompt("Edit nama:", d.data.name);
-          if (newName) {
-            d.data.name = newName;
-            saveTreeData();
-            renderTree(treeData);
-          }
-        } else {
-          clickTimer = setTimeout(() => {
-            clickTimer = null;
-            if (!d.data.children) d.data.children = [];
-            d.data.children.push({ name: "🆕 Cabang Baru" });
-            saveTreeData();
-            renderTree(treeData);
-          }, 250);
+    function wrapText(text, maxChars=25) {
+      const words = text.split(" ");
+      const lines = [], line = [];
+      words.forEach(w => {
+        line.push(w);
+        if (line.join(" ").length > maxChars) {
+          line.pop();
+          lines.push(line.join(" "));
+          line.length = 0;
+          line.push(w);
         }
       });
+      if (line.length) lines.push(line.join(" "));
+      return lines;
+    }
 
-    // Teks multi-baris + tooltip
-    node.each(function(d) {
-      const g = d3.select(this);
-      const name = d.data.name;
-      const maxCharsPerLine = 20;
+    function renderTree(data) {
+  const svg = d3.select("#treeSvg");
+  svg.selectAll("*").remove();
 
-      const lines = [];
-      for (let i = 0; i < name.length; i += maxCharsPerLine) {
-        lines.push(name.substring(i, i + maxCharsPerLine));
+  const g = svg.append("g").attr("transform", "translate(60,60)");
+  const root = d3.hierarchy(data);
+  d3.tree().size([500, 1000])(root);
+
+  // Garis antar node
+  g.selectAll(".link")
+    .data(root.links())
+    .enter().append("path")
+    .attr("class", "link")
+    .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x))
+    .attr("fill", "none")
+    .attr("stroke", "#999");
+
+  // Grup node
+  const node = g.selectAll(".node")
+    .data(root.descendants())
+    .enter().append("g")
+    .attr("class", "node")
+    .attr("transform", d => `translate(${d.y},${d.x})`);
+
+  // Deteksi klik tunggal/ganda
+  let clickTimer = null;
+
+  node.append("rect")
+    .attr("x", -60)
+    .attr("y", -20)
+    .attr("width", 140)
+    .attr("height", 40)
+    .attr("rx", 10)
+    .attr("fill", d => colors[d.depth % colors.length])
+    .attr("stroke", "#333")
+    .attr("stroke-width", 1.5)
+    .style("cursor", "pointer");
+
+  node.append("foreignObject")
+    .attr("x", -55)
+    .attr("y", -15)
+    .attr("width", 130)
+    .attr("height", 30)
+    .append("xhtml:div")
+    .style("width", "130px")
+    .style("height", "30px")
+    .style("display", "flex")
+    .style("align-items", "center")
+    .style("justify-content", "center")
+    .style("color", "white")
+    .style("font-size", "12px")
+    .style("text-align", "center")
+    .style("word-break", "break-word")
+    .text(d => d.data.name);
+
+  // Listener klik tunggal & ganda di <g> node
+  node.on("click", (event, d) => {
+    if (clickTimer) {
+      clearTimeout(clickTimer);
+      clickTimer = null;
+
+      // Double click → edit nama
+      const newName = prompt("Edit nama:", d.data.name);
+      if (newName && newName.trim()) {
+        d.data.name = newName.trim();
+        saveToGitHub();
+        renderTree(treeData);
       }
+    } else {
+      clickTimer = setTimeout(() => {
+        clickTimer = null;
 
-      const text = g.append("text")
-        .attr("text-anchor", "middle")
-        .style("fill", "#fff")
-        .style("font-size", "12px")
-        .style("pointer-events", "none");
+        // Single click → tambah anak
+        if (!d.data.children) d.data.children = [];
+        d.data.children.push({ name: "🆕 Cabang Baru" });
+        saveToGitHub();
+        renderTree(treeData);
+      }, 300);
+    }
+  });
 
-      const lineHeight = 14;
-      const totalHeight = lines.length * lineHeight;
-      const startY = -totalHeight / 2 + lineHeight / 2;
-
-      lines.forEach((line, i) => {
-        text.append("tspan")
-          .attr("x", 0)
-          .attr("dy", i === 0 ? startY : lineHeight)
-          .text(line);
-      });
-
-      g.append("foreignObject")
-        .attr("x", -80)
-        .attr("y", -60)
-        .attr("width", 160)
-        .attr("height", 100)
-        .style("pointer-events", "none")
-        .append("xhtml:div")
-        .attr("class", "tooltip-box")
-        .style("visibility", "hidden")
-        .html(name);
-
-      g.on("mouseover", function () {
-        d3.select(this).select("foreignObject div").style("visibility", "visible");
-      }).on("mouseout", function () {
-        d3.select(this).select("foreignObject div").style("visibility", "hidden");
-      });
+  // Tombol hapus
+  node.filter(d => d.depth > 0).append("text")
+    .attr("x", 70)
+    .attr("y", -10)
+    .attr("font-size", "16px")
+    .attr("fill", "#ff3333")
+    .style("cursor", "pointer")
+    .text("❌")
+    .on("click", (event, d) => {
+      event.stopPropagation(); // jangan ikut klik parent node
+      const parent = d.parent.data;
+      parent.children = parent.children.filter(child => child !== d.data);
+      saveToGitHub();
+      renderTree(treeData);
     });
+}
 
-    // ❌ tombol hapus
-    node.filter(d => d.depth > 0).append("text")
-      .attr("x", 75)
-      .attr("y", -12)
-      .attr("font-size", "16px")
-      .attr("fill", "#ff3333")
-      .style("cursor", "pointer")
-      .text("❌")
-      .on("click", (event, d) => {
-        const parent = d.parent.data;
-        parent.children = parent.children.filter(child => child !== d.data);
-        saveTreeData();
+    function saveToGitHub() {
+  const json = JSON.stringify(treeData, null, 2);
+  const utf8Bytes = new TextEncoder().encode(json);
+  const content = btoa(String.fromCharCode(...utf8Bytes)); // FIX UTF-8
+
+  const sha = localStorage.getItem("notach_sha");
+
+  fetch(`https://api.github.com/repos/${GITHUB.username}/${GITHUB.repo}/contents/${GITHUB.path}`, {
+    method: "PUT",
+    headers: {
+      "Authorization": `token ${GITHUB.token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      message: "update mindmap",
+      content,
+      sha: sha || undefined
+    })
+  })
+  .then(r => r.json())
+  .then(j => {
+    if (j.content && j.content.sha) {
+      localStorage.setItem("notach_sha", j.content.sha); // simpan versi terbaru
+      console.log("✅ Berhasil simpan ke GitHub");
+    } else {
+      console.error("❌ Gagal simpan:", j);
+    }
+  })
+  .catch(err => {
+    console.error("❌ Error network:", err);
+  });
+}
+
+
+    function loadMindmap() {
+      fetch(`https://api.github.com/repos/${GITHUB.username}/${GITHUB.repo}/contents/${GITHUB.path}`, {
+        headers: { "Authorization":`token ${GITHUB.token}` }
+      })
+      .then(r=>r.json())
+      .then(j=>{
+        treeData = JSON.parse(atob(j.content));
+        localStorage.setItem("notach_sha", j.sha);
+        showUI();
+        renderTree(treeData);
+      })
+      .catch(err=>{
+        console.warn(err);
+        treeData = { name:"Input Indikator NOTACH", children:[] };
+        showUI();
         renderTree(treeData);
       });
-  }
-
-  function exportMindmapToJSON() {
-    const blob = new Blob([JSON.stringify(treeData, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "mindmap-notach.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function exportToPNG() {
-    html2canvas(document.querySelector("#treeSvg")).then(canvas => {
-      const link = document.createElement("a");
-      link.download = "mindmap-notach.png";
-      link.href = canvas.toDataURL();
-      link.click();
-    });
-  }
-
-  function resetMindmap() {
-    if (confirm("Yakin ingin menghapus semua data mindmap dan mulai ulang?")) {
-      localStorage.removeItem("notach_mindmap");
-      location.reload();
-    }
-  }
-
-  renderTree(treeData);
-
-
-function loadMindmapNotach() {
-  showLoading();
-  document.getElementById('headerSection').style.display = 'none';
-
-  setTimeout(() => {
-    hideLoading();
-
-    // Cek localStorage
-    const savedTree = localStorage.getItem("notach_mindmap");
-    if (savedTree) {
-      treeData = JSON.parse(savedTree);
     }
 
-    const container = document.getElementById("dashboardContent");
-    container.innerHTML = `
-      <div class="container my-4">
-        <h4 class="text-center mb-4 text-primary fw-bold animate__animated animate__fadeInDown">
-          🧠 Mind Map Problem Solving - District BANTEN
-        </h4>
-        <div class="card shadow-lg border-0 animate__animated animate__zoomIn">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
-              <div>
-                <button class="btn btn-outline-secondary btn-sm" onclick="renderTree(treeData)">🔄 Refresh Mindmap</button>
-              </div>
-              <div class="d-flex gap-2">
-                <button class="btn btn-outline-success btn-sm" onclick="exportMindmapToJSON()">💾 Simpan JSON</button>
-                <button class="btn btn-outline-danger btn-sm" onclick="exportToPNG()">🖼️ Export PNG</button>
-                <button class="btn btn-outline-dark btn-sm" onclick="resetMindmap()">🗑️ Reset Mindmap</button>
-              </div>
-            </div>
-            <div class="bg-light rounded shadow-sm p-3 overflow-auto border" style="min-height: 500px;">
-              <svg id="treeSvg" width="100%" height="600"></svg>
-            </div>
-          </div>
+    function showUI(){
+      document.getElementById("dashboardContent").innerHTML = `
+        <div style="margin-bottom:16px">
+          <button class="btn btn-secondary" onclick="loadMindmap()">🔄 Refresh</button>
+          <button class="btn btn-success" onclick="saveToGitHub()">☁️ Simpan ke GitHub</button>
+          <button class="btn btn-info" onclick="exportToPNG()">🖼️ Export PNG</button>
+          <button class="btn btn-warning" onclick="exportToJSON()">💾 Simpan JSON</button>
         </div>
-      </div>
-    `;
+        <svg id="treeSvg" width="100%" height="600" style="border:1px solid #ddd"></svg>`;
+    }
 
-    renderTree(treeData);
-  }, 400);
-}
+    function exportToPNG(){
+      html2canvas(document.querySelector("#treeSvg")).then(c=>{
+        const a=document.createElement("a");
+        a.href=c.toDataURL();
+        a.download="mindmap.png";
+        a.click();
+      });
+    }
+
+    function exportToJSON(){
+      const a = document.createElement("a");
+      const blob = new Blob([JSON.stringify(treeData,null,2)],{type:"application/json"});
+      a.href=URL.createObjectURL(blob);
+      a.download="mindmap-notach.json";
+      a.click();
+    }
 
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
