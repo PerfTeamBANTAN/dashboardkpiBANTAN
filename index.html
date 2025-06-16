@@ -80,6 +80,19 @@
     stroke: #b2bec3;
     stroke-width: 1.5px;
   }
+
+    .node text {
+      font-size: 12px;
+    }
+    .tooltip-box {
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      max-width: 250px;
+      word-wrap: break-word;
+    }
   </style>
   
 </head>
@@ -2432,124 +2445,151 @@ function formatTanggalWaktuLengkap(tgl) {
   } catch { return tgl; }
 }
 let treeData = {
-  name: "Input Indikator NOTACH",
-  children: [
-    { name: "Klik dua kali untuk edit", children: [] }
-  ]
-};
+    name: "Input Indikator NOTACH",
+    children: [
+      { name: "Klik dua kali untuk edit", children: [] }
+    ]
+  };
 
-const colors = ["#E62814", "#5B4F4D", "#6A5452", "#d62828", "#6a4c93", "#00b4d8", "#ff006e", "#962629e", "#6F2498", "#D8D303"];
+  const colors = ["#E62814", "#5B4F4D", "#6A5452", "#d62828", "#6a4c93", "#00b4d8", "#ff006e", "#962629e", "#6F2498", "#D8D303"];
 
-function renderTree(data) {
-  const svg = d3.select("#treeSvg");
-  svg.selectAll("*").remove();
+  function renderTree(data) {
+    const svg = d3.select("#treeSvg");
+    svg.selectAll("*").remove();
 
-  const g = svg.append("g").attr("transform", "translate(60,60)");
-  const root = d3.hierarchy(data);
-  d3.tree().size([500, 1000])(root);
+    const g = svg.append("g").attr("transform", "translate(60,60)");
+    const root = d3.hierarchy(data);
+    d3.tree().size([500, 1000])(root);
 
-  g.selectAll(".link")
-    .data(root.links())
-    .enter().append("path")
-    .attr("class", "link")
-    .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x))
-    .attr("fill", "none");
+    g.selectAll(".link")
+      .data(root.links())
+      .enter().append("path")
+      .attr("class", "link")
+      .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x))
+      .attr("fill", "none")
+      .attr("stroke", "#ccc");
 
-  const node = g.selectAll(".node")
-    .data(root.descendants())
-    .enter().append("g")
-    .attr("class", "node")
-    .attr("transform", d => `translate(${d.y},${d.x})`);
+    const node = g.selectAll(".node")
+      .data(root.descendants())
+      .enter().append("g")
+      .attr("class", "node")
+      .attr("transform", d => `translate(${d.y},${d.x})`);
 
-  // Click handling for single vs double
-  let clickTimer = null;
+    let clickTimer = null;
 
-  node.append("rect")
-    .attr("x", -60)
-    .attr("y", -15)
-    .attr("width", 120)
-    .attr("height", 30)
-    .attr("rx", 8)
-    .attr("fill", d => colors[d.depth % colors.length])
-    .attr("stroke", "#333")
-    .attr("stroke-width", 1.5)
-    .style("cursor", "pointer")
-    .on("click", (e, d) => {
-      if (clickTimer) {
-        clearTimeout(clickTimer);
-        clickTimer = null;
-
-        // Double click = edit
-        const newName = prompt("Edit nama:", d.data.name);
-        if (newName) {
-          d.data.name = newName;
-          renderTree(treeData);
-        }
-      } else {
-        clickTimer = setTimeout(() => {
+    node.append("rect")
+      .attr("x", -70)
+      .attr("y", -20)
+      .attr("width", 140)
+      .attr("height", 40)
+      .attr("rx", 10)
+      .attr("fill", d => colors[d.depth % colors.length])
+      .attr("stroke", "#333")
+      .attr("stroke-width", 1.5)
+      .style("cursor", "pointer")
+      .on("click", (e, d) => {
+        if (clickTimer) {
+          clearTimeout(clickTimer);
           clickTimer = null;
 
-          // Single click = tambah anak
-          if (!d.data.children) d.data.children = [];
-          d.data.children.push({ name: "🆕 Cabang Baru" });
-          renderTree(treeData);
-        }, 250);
+          const newName = prompt("Edit nama:", d.data.name);
+          if (newName) {
+            d.data.name = newName;
+            renderTree(treeData);
+          }
+        } else {
+          clickTimer = setTimeout(() => {
+            clickTimer = null;
+
+            if (!d.data.children) d.data.children = [];
+            d.data.children.push({ name: "🆕 Cabang Baru" });
+            renderTree(treeData);
+          }, 250);
+        }
+      });
+
+    // Multi-line text + Tooltip
+    node.each(function(d) {
+      const g = d3.select(this);
+      const name = d.data.name;
+      const maxCharsPerLine = 20;
+
+      const lines = [];
+      for (let i = 0; i < name.length; i += maxCharsPerLine) {
+        lines.push(name.substring(i, i + maxCharsPerLine));
       }
+
+      const text = g.append("text")
+        .attr("text-anchor", "middle")
+        .style("fill", "#fff")
+        .style("font-size", "12px")
+        .style("pointer-events", "none");
+
+      const lineHeight = 14;
+      const totalHeight = lines.length * lineHeight;
+      const startY = -totalHeight / 2 + lineHeight / 2;
+
+      lines.forEach((line, i) => {
+        text.append("tspan")
+          .attr("x", 0)
+          .attr("dy", i === 0 ? startY : lineHeight)
+          .text(line);
+      });
+
+      // Tooltip detail (HTML via foreignObject)
+      g.append("foreignObject")
+        .attr("x", -80)
+        .attr("y", -60)
+        .attr("width", 160)
+        .attr("height", 100)
+        .style("pointer-events", "none")
+        .append("xhtml:div")
+        .attr("class", "tooltip-box")
+        .style("visibility", "hidden")
+        .html(name);
+
+      g.on("mouseover", function () {
+        d3.select(this).select("foreignObject div").style("visibility", "visible");
+      }).on("mouseout", function () {
+        d3.select(this).select("foreignObject div").style("visibility", "hidden");
+      });
     });
 
-  node.append("text")
-  .attr("dy", 5)
-  .attr("text-anchor", "middle")
-  .style("fill", "#fff")
-  .style("font-size", "12px")
-  .style("pointer-events", "none")
-  .each(function (d) {
-    const text = d3.select(this);
-    const name = d.data.name;
-    const maxLength = 18; // maksimal karakter
+    // Tombol hapus ❌
+    node.filter(d => d.depth > 0).append("text")
+      .attr("x", 75)
+      .attr("y", -12)
+      .attr("font-size", "16px")
+      .attr("fill", "#ff3333")
+      .style("cursor", "pointer")
+      .text("❌")
+      .on("click", (event, d) => {
+        const parent = d.parent.data;
+        parent.children = parent.children.filter(child => child !== d.data);
+        renderTree(treeData);
+      });
+  }
 
-    // Potong teks jika terlalu panjang
-    const displayedText = name.length > maxLength ? name.substring(0, maxLength - 1) + "…" : name;
-    text.text(displayedText);
+  function exportMindmapToJSON() {
+    const blob = new Blob([JSON.stringify(treeData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mindmap-notach.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
-    // Tooltip untuk nama asli
-    text.append("title").text(name);
-  });
-
-  // ❌ Hapus cabang
-  node.filter(d => d.depth > 0).append("text")
-    .attr("x", 65)
-    .attr("y", -10)
-    .attr("font-size", "16px")
-    .attr("fill", "#ff3333")
-    .style("cursor", "pointer")
-    .text("❌")
-    .on("click", (event, d) => {
-      const parent = d.parent.data;
-      parent.children = parent.children.filter(child => child !== d.data);
-      renderTree(treeData);
+  function exportToPNG() {
+    html2canvas(document.querySelector("#treeSvg")).then(canvas => {
+      const link = document.createElement("a");
+      link.download = "mindmap-notach.png";
+      link.href = canvas.toDataURL();
+      link.click();
     });
-}
+  }
 
-
-function exportMindmapToJSON() {
-  const blob = new Blob([JSON.stringify(treeData, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "mindmap-notach.json";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function exportToPNG() {
-  html2canvas(document.querySelector("#treeSvg")).then(canvas => {
-    const link = document.createElement("a");
-    link.download = "mindmap-notach.png";
-    link.href = canvas.toDataURL();
-    link.click();
-  });
-}
+  renderTree(treeData);
 
 function loadMindmapNotach() {
   showLoading();
