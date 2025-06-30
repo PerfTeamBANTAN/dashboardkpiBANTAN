@@ -6,43 +6,54 @@ function doGet(e) {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('RACING');
     const values = sheet.getDataRange().getValues();
     data = values.slice(1, 13).map(row => ({
-      nama: row[0],
-      sektor: row[1],
-      gms: row[2],
-      zero: row[3],
-      ach_zero: row[4],
-      pi12: row[5],
-      ach_pi12: row[6],
-      kpi: row[7],
-      ach_kpi: row[8],
-      tnps: row[9],
-      ach_tnps: row[10],
-      psb: row[11],
-      ach_psb: row[12],
-      realisasi: row[13],
-      rank: row[14]
-    }));
+  nama:            row[0],
+  sektor:          row[1],
+  gms:             row[2],
+  zero:            row[3],
+  ach_zero:        row[4],
+  pi12:            row[5],
+  ach_pi12:        row[6],
+  kpi:             row[7],
+  ach_kpi:         row[8],
+  tnps:            row[9],
+  ach_tnps:        row[10],
+  psb:             row[11],
+  ach_psb:         row[12],
+  ffg:             row[13],
+  ach_ffg:         row[14],
+  preventif:       row[15],
+  ach_preventif:   row[16],
+  realisasi:       row[17],
+  rank:            row[18]
+}));
+
 
   } else if (kategori === 'racing hsa') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('RACING');
     const values = sheet.getDataRange().getValues();
     data = values.slice(14, 23).map(row => ({
-      nama: row[0],
-      sektor: row[1],
-      gms: row[2],
-      zero: row[3],
-      ach_zero: row[4],
-      pi12: row[5],
-      ach_pi12: row[6],
-      kpi: row[7],
-      ach_kpi: row[8],
-      tnps: row[9],
-      ach_tnps: row[10],
-      psb: row[11],
-      ach_psb: row[12],
-      realisasi: row[13],
-      rank: row[14]
-    }));
+  nama:            row[0],
+  sektor:          row[1],
+  gms:             row[2],
+  zero:            row[3],
+  ach_zero:        row[4],
+  pi12:            row[5],
+  ach_pi12:        row[6],
+  kpi:             row[7],
+  ach_kpi:         row[8],
+  tnps:            row[9],
+  ach_tnps:        row[10],
+  psb:             row[11],
+  ach_psb:         row[12],
+  ffg:             row[13],
+  ach_ffg:         row[14],
+  preventif:       row[15],
+  ach_preventif:   row[16],
+  realisasi:       row[17],
+  rank:            row[18]
+}));
+
+
 
   } else if (kategori === '12 pi laten') {
     const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('12 PI LATEN');
@@ -385,10 +396,35 @@ function doGet(e) {
   const values = sheet.getRange("A1:D14").getValues();
   return ContentService.createTextOutput(JSON.stringify(values)).setMimeType(ContentService.MimeType.JSON);
 
-}
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
 
-  
+     } else if (kategori === 'sqm') {
+    const submenu = (e.parameter.submenu || "").toLowerCase();
+    const sheet = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY').getSheetByName('SQM');
+
+    let range = '';
+    if (submenu === 'sqm4jam') {
+      range = 'A61:M73';
+    } else if (submenu === 'kpisqm') {
+      range = 'A1:T58';
+    } else {
+      return ContentService
+        .createTextOutput(JSON.stringify({ error: 'Submenu tidak dikenali' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const values = sheet.getRange(range).getValues();
+    return ContentService
+      .createTextOutput(JSON.stringify({ values }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+if (data.length > 0) {
+    return ContentService
+      .createTextOutput(JSON.stringify(data))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // Default jika tidak cocok apa pun
+  return ContentService
+    .createTextOutput(JSON.stringify({ error: "Kategori tidak ditemukan." }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
