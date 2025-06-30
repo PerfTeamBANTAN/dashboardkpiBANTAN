@@ -101,6 +101,106 @@
     transition: opacity 0.2s ease, transform 0.2s ease;
     transform: translate(0, 0); /* untuk efek gerakan */
     }
+    table.table tr.rank-juara td {
+  background-color: #d4edda !important;
+  font-weight: bold;
+}
+table.table tr.rank-runnerup td {
+  background-color: #fff3cd !important;
+}
+table.table tr.rank-terakhir td {
+  background-color: #f8d7da !important;
+  color: #721c24;
+}
+@keyframes fadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.table tbody tr {
+  animation: fadeSlideIn 0.5s ease-in-out;
+}
+td.rank-cell {
+  position: relative;
+  cursor: help;
+}
+
+td.rank-cell::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+td.rank-cell:hover::after {
+  opacity: 1;
+}
+
+.table thead.table-header-custom th {
+  background: linear-gradient(to right, #4a00e0, #8e2de2); /* Ungu gradasi */
+  color: #fff;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 13px;
+  border-bottom: 2px solid #ccc;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.bendera-text {
+      font-size: 32px;
+      line-height: 1;
+      letter-spacing: 2px;
+    }
+    .bendera-text .merah {
+      color: red;
+    }
+    .bendera-text .putih {
+      color: white;
+      text-shadow: 0 0 1px #ccc;
+    }
+
+.table-responsive {
+    overflow-x: auto;
+  }
+  .sqm-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .sqm-table th, .sqm-table td {
+    font-size: 12px;
+    white-space: nowrap;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+  }
+  .sqm-table thead th {
+    background: linear-gradient(to right, #c62828, #ffffff);
+    color: white;
+    white-space: normal;
+    font-weight: bold;
+  }
+
   </style>
   
 </head>
@@ -145,7 +245,13 @@
               <li><a class="dropdown-item" href="#" onclick="loadUnderspec()">Underspec</a></li>
               <li><a class="dropdown-item" href="#" onclick="loadTangible()">Tangible</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Validasi</a></li>
-              <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">SQM</a></li>
+              <li class="dropdown-submenu">
+  <a class="dropdown-item dropdown-toggle" href="#">SQM</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="#" onclick="loadSQM('sqm4jam')">SQM 4 Jam</a></li>
+    <li><a class="dropdown-item" href="#" onclick="loadSQM('kpisqm')">KPI SQM</a></li>
+  </ul>
+</li>
               <li><a class="dropdown-item" href="#" onclick="loadScc()">SCC</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Infracare</a></li>
               <li><a class="dropdown-item" href="#" onclick="showNotAvailable()">Ext Audit</a></li>
@@ -289,14 +395,13 @@ function loadData(kategori) {
       const isMitraIOAN = kategori.toLowerCase().includes('ioan') && kategori.toLowerCase().includes('mitra');
 
       let heading = '';
-      if (kategori.toLowerCase().includes('mitra')) {
-        heading = `▀▄▀▄▀▄ RACING MITRA TANGERANG ${bulan} ▄▀▄▀▄▀`;
-      } else if (kategori.toLowerCase().includes('hsa')) {
-        heading = `▀▄▀▄▀▄ RACING HSA TANGERANG ${bulan} ▄▀▄▀▄▀`;
-      } else {
-        heading = `▀▄▀▄▀▄ RACING ${kategori.toUpperCase()} ${bulan} ▄▀▄▀▄▀`;
-      }
-
+if (kategori.toLowerCase().includes('mitra')) {
+  heading = `<span style="color: red;">▀▄▀▄▀▄</span> RACING MITRA TANGERANG ${bulan} <span style="color: red;">▄▀▄▀▄▀</span>`;
+} else if (kategori.toLowerCase().includes('hsa')) {
+  heading = `<span style="color: red;">▀▄▀▄▀▄</span> RACING HSA TANGERANG ${bulan} <span style="color: red;">▄▀▄▀▄▀</span>`;
+} else {
+  heading = `<span style="color: red;">▀▄▀▄▀▄</span> RACING ${kategori.toUpperCase()} ${bulan} <span style="color: red;">▄▀▄▀▄▀</span>`;
+}
       // === KHUSUS IOAN MITRA FULL TABEL ===
       if (isIOANMitraTable) {
         let html = `
@@ -328,92 +433,99 @@ function loadData(kategori) {
       }
 
       // === DEFAULT: RACING MITRA / HSA ===
-      let html = `
-        <h4 class="text-center fw-bold mb-3">${heading}</h4>
-        <div class="table-responsive">
-          <table class="table table-bordered table-striped table-sm text-center align-middle">
-            <thead class="table-dark">
-              <tr>
-                <th>Nama</th>
-                <th>Jumlah Sektor</th>
-                <th>Induk GMS</th>
-                <th>ZERO GAMS</th>
-                <th>ACH ZERO</th>
-                <th>REAL 12PI</th>
-                <th>ACH 12PI</th>
-                <th>REAL KPI</th>
-                <th>ACH KPI</th>
-                <th>REAL TNPS</th>
-                <th>ACH TNPS</th>
-                <th>REAL PSB</th>
-                <th>ACH PSB</th>
-                <th>REALISASI</th>
-                <th>RANK</th>
-              </tr>
-            </thead>
-            <tbody>
-      `;
+let html = `
+    <h4 class="text-center fw-bold mb-3">${heading}</h4>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped table-sm text-center align-middle">
+        <thead class="table-header-custom">
+          <tr>
+            <th>Nama</th><th>Jumlah Sektor</th><th>Induk GMS</th>
+            <th>REAL ZERO</th><th>ACH ZERO</th>
+            <th>REAL 12PI</th><th>ACH 12PI</th>
+            <th>REAL KPI</th><th>ACH KPI</th>
+            <th>REAL TNPS</th><th>ACH TNPS</th>
+            <th>REAL PSB</th><th>ACH PSB</th>
+            <th>REAL FFG</th><th>ACH FFG</th>
+            <th>REAL PREVENTIF</th><th>ACH PREVENTIF</th>
+            <th>REALISASI</th><th>RANK</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
 
-      data
-        .filter(row => row.nama && row.nama.toString().trim() !== '')
-        .forEach(row => {
-          html += `
-            <tr>
-              <td>${row.nama}</td>
-              <td>${row.sektor}</td>
-              <td>${row.gms}</td>
-              <td>${parseFloat(row.zero).toFixed(2)}</td>
-              <td>${parseFloat(row.ach_zero).toFixed(2)}</td>
-              <td>${parseFloat(row.pi12).toFixed(2)}</td>
-              <td>${parseFloat(row.ach_pi12).toFixed(2)}</td>
-              <td>${parseFloat(row.kpi).toFixed(2)}</td>
-              <td>${parseFloat(row.ach_kpi).toFixed(2)}</td>
-              <td>${parseFloat(row.tnps).toFixed(2)}</td>
-              <td>${parseFloat(row.ach_tnps).toFixed(2)}</td>
-              <td>${parseFloat(row.psb).toFixed(2)}</td>
-              <td>${parseFloat(row.ach_psb).toFixed(2)}</td>
-              <td>${parseFloat(row.realisasi).toFixed(2)}</td>
-              <td>${parseInt(row.rank)}</td>
-            </tr>
-          `;
-        });
+  data
+    .filter(row => row.nama && row.nama.toString().trim() !== '')
+    .sort((a, b) => parseFloat(a.rank) - parseFloat(b.rank))
+    .forEach((row, idx, arr) => {
+      const f = n => isNaN(+n) ? '-' : (+n).toFixed(2);
+      const rank = parseInt(row.rank);
+      let rowClass = '';
 
-      html += `</tbody></table></div>`;
+      if (rank === 1) rowClass = 'rank-juara';
+      else if (rank === 2 || rank === 3) rowClass = 'rank-runnerup';
+      else if (rank === arr.length) rowClass = 'rank-terakhir';
 
-      // === Laporan Ranking Ringkas ===
-      const now = new Date();
-      const tanggal = now.toLocaleDateString('id-ID');
-      const waktu = now.toLocaleTimeString('id-ID');
+      html += `
+        <tr class="${rowClass}">
+          <td>${row.nama}</td>
+          <td>${row.sektor}</td>
+          <td>${row.gms}</td>
+          <td>${f(row.zero)}</td>
+          <td>${f(row.ach_zero)}</td>
+          <td>${f(row.pi12)}</td>
+          <td>${f(row.ach_pi12)}</td>
+          <td>${f(row.kpi)}</td>
+          <td>${f(row.ach_kpi)}</td>
+          <td>${f(row.tnps)}</td>
+          <td>${f(row.ach_tnps)}</td>
+          <td>${f(row.psb)}</td>
+          <td>${f(row.ach_psb)}</td>
+          <td>${f(row.ffg)}</td>
+          <td>${f(row.ach_ffg)}</td>
+          <td>${f(row.preventif)}</td>
+          <td>${f(row.ach_preventif)}</td>
+          <td>${f(row.realisasi)}</td>
+          <td>${row.rank}</td>
+        </tr>`;
+    });
 
-      let reportJudul = '';
-      let reportKolom = '';
-      if (isHsa) {
-        reportJudul = `▀▄▀▄  *Report Pencapaian RACING HSA TANGERANG* ▄▀▄▀\n==========================`;
-        reportKolom = 'REALISASI';
-      } else if (isMitraIOAN) {
-        reportJudul = `*Report Pencapaian KPI IOAN MITRA DIST (B2C)*`;
-        reportKolom = 'ACH';
-      } else {
-        reportJudul = `*Report Pencapaian RACING ${kategori.toUpperCase()}*`;
-        reportKolom = 'REALISASI';
-      }
+  html += `</tbody></table></div>`;
 
-      let reportBody = `\n_Posisi :_  ${tanggal} ${waktu}\nRANK  ${isMitraIOAN ? 'MITRA' : 'HSA'}  ${reportKolom}\n`;
+  // === RANKING TEXT REPORT ===
+  const now = new Date();
+  const tanggal = now.toLocaleDateString('id-ID');
+  const waktu = now.toLocaleTimeString('id-ID');
 
-      data
-        .filter(row => row.rank && row.nama)
-        .sort((a, b) => parseFloat(a.rank) - parseFloat(b.rank))
-        .forEach((row, idx, arr) => {
-          const isJuara = idx === 0 ? ' 🏆' : '';
-          const isTerkahir = idx === arr.length - 1 ? ' ☠️' : '';
-          const nilai = isMitraIOAN ? row.ach_kpi : row.realisasi;
-          reportBody += `${parseInt(row.rank)}  ${row.nama}  ${parseFloat(nilai).toFixed(2)}${isJuara}${isTerkahir}\n`;
-        });
+  let reportJudul = '';
+  let reportKolom = '';
+  if (isHsa) {
+    reportJudul = `▀▄▀▄  *Report Pencapaian RACING HSA TANGERANG* ▄▀▄▀\n==========================`;
+    reportKolom = 'REALISASI';
+  } else if (isMitraIOAN) {
+    reportJudul = `*Report Pencapaian KPI IOAN MITRA DIST (B2C)*`;
+    reportKolom = 'ACH';
+  } else {
+    reportJudul = `*Report Pencapaian RACING ${kategori.toUpperCase()}*`;
+    reportKolom = 'REALISASI';
+  }
 
-      html += `<pre class="mt-3">${reportJudul}${reportBody}</pre>`;
-      container.innerHTML = html;
-    })
-    .catch(err => {
+  let reportBody = `\n_Posisi :_  ${tanggal} ${waktu}\nRANK  ${isMitraIOAN ? 'MITRA' : 'HSA'}  ${reportKolom}\n`;
+
+  data
+    .filter(row => row.rank && row.nama)
+    .sort((a, b) => parseFloat(a.rank) - parseFloat(b.rank))
+    .forEach((row, idx, arr) => {
+      const isJuara = idx === 0 ? ' 🏆' : '';
+      const isTerakhir = idx === arr.length - 1 ? ' ☠️' : '';
+      const nilai = isMitraIOAN ? row.ach_kpi : row.realisasi;
+      const nilaiFix = isNaN(+nilai) ? '-' : (+nilai).toFixed(2);
+      reportBody += `${parseInt(row.rank)}  ${row.nama}  ${nilaiFix}${isJuara}${isTerakhir}\n`;
+    });
+
+  html += `<pre class="mt-3">${reportJudul}${reportBody}</pre>`;
+  container.innerHTML = html;
+})
+.catch(err => {
       hideLoading();
       console.error('Gagal muat:', err);
       document.getElementById('dashboardContent').innerHTML =
@@ -2684,6 +2796,94 @@ function exportToJSON() {
   a.download = "mindmap-notach.json";
   a.click();
 }
+
+function loadSQM(submenu) {
+  showLoading();
+  document.getElementById('headerSection').style.display = 'none';
+
+  const url = `https://script.google.com/macros/s/AKfycbwq85CIdDt06BPp4CayvtOwsjNcTuIAzzsfljN4gEa1m7PA74KbBC9RMmMk-ifltgf0/exec?kategori=sqm&submenu=${submenu}`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      hideLoading();
+      const container = document.getElementById('dashboardContent');
+      if (!data.values || data.values.length < 3) {
+        container.innerHTML = '<p class="text-center text-muted">Data tidak tersedia.</p>';
+        return;
+      }
+
+      const title = submenu === 'sqm4jam' ? '📍 SQM 4 JAM' : '📊 KPI SQM';
+      let html = `<h4 class="text-center fw-bold mb-3">${title}</h4>`;
+      html += `<div class="table-responsive"><table class="table table-bordered table-sm text-center align-middle sqm-table"><thead>`;
+
+      const header1 = data.values[0];
+      const header2 = data.values[1];
+
+      // === Header Baris 1 ===
+      html += `<tr>`;
+      for (let i = 0; i < header1.length; i++) {
+        const top = String(header1[i] || '').replace(/\n/g, '<br>').trim();
+        const bottom = String(header2[i] || '').replace(/\n/g, '<br>').trim();
+
+        if (!bottom) {
+          html += `<th rowspan="2" style="min-width: 120px;">${top}</th>`;
+        } else {
+          html += `<th style="min-width: 120px;">${top}</th>`;
+        }
+      }
+      html += `</tr>`;
+
+      // === Header Baris 2 ===
+      html += `<tr>`;
+      for (let i = 0; i < header2.length; i++) {
+        const cell = String(header2[i] || '').replace(/\n/g, '<br>').trim();
+        if (cell) {
+          html += `<th style="min-width: 120px;">${cell}</th>`;
+        }
+      }
+      html += `</tr></thead><tbody>`;
+
+      // === Isi Tabel Mulai dari Baris ke-3 ===
+      for (let i = 2; i < data.values.length; i++) {
+        html += `<tr>`;
+        data.values[i].forEach(cell => {
+          html += `<td>${cell}</td>`;
+        });
+        html += `</tr>`;
+      }
+
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      hideLoading();
+      console.error('Gagal ambil data SQM:', err);
+      document.getElementById('dashboardContent').innerHTML =
+        '<p class="text-danger text-center">Gagal memuat data SQM.</p>';
+    });
+}
+
+
+function handleSQM(submenu) {
+  const ss = SpreadsheetApp.openById('1J1c54S6RQUK1D48tSP45AoYXpbFzWcSwO7G6imrxRpY');
+  const sheet = ss.getSheetByName('SQM');
+  let range = '';
+
+  if (submenu === 'sqm4jam') {
+    range = 'A61:M73';
+  } else if (submenu === 'kpisqm') {
+    range = 'A1:T58';
+  } else {
+    return ContentService.createTextOutput(JSON.stringify({ error: 'Submenu tidak dikenali' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const values = sheet.getRange(range).getValues();
+  return ContentService.createTextOutput(JSON.stringify({ values }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
